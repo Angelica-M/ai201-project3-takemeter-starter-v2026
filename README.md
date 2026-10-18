@@ -38,16 +38,25 @@
 <!-- ═══════════════════════ UNIT 5 — THE BUILD ═══════════════════════ -->
 
 ## What This Does
-
 <!-- Your community, and what your classifier sorts posts into. Three or four
      sentences. -->
 
+## What This Does: Your community, and what your classifier sorts posts into.
 
+TakeMeter targets **r/estimators**, a specialized online Reddit community where construction estimators, preconstruction managers, trade contractors, and software vendors discuss plan takeoffs, bidding strategies, software tools, and industry practices. The posts in this subreddit range from highly technical discussions about sheet metal weight calculations and complex mechanical scope gaps to general career questions, software sales pitches, and bid-day frustration posts. To analyze and categorize these posts effectively, TakeMeter sorts incoming community content into five core taxonomy distinctions:
+
+* All 5 Taxonomy Distinctions are
+* **Trade Scope & Division Boundaries** (with a total of 4 categories that are: Division 23 (Full Mechanical/HVAC), Sub-Trade Specialty (Sheet Metal vs. Hydronics/Piping), MEP Package (Mechanical/Plumbing/Electrical), and General Construction / Non-Mechanical)
+* **Software Stack & Tooling Architecture** (with a total of 4 categories that are: General PDF & CAD Digitizers, Specialized Mechanical Estimating Databases, Enterprise ERP & Bidding Platforms, and Emerging AI & Automation Tools)
+* **Project Sector & Delivery Model** (with a total of 4 categories that are: Commercial / Institutional / Industrial (Mid–Large B2B), Multi-Family Residential / Tract Housing, Service, Replacement & Retrofit Bidding, and Public Works / Prevailing Wage Bidding)
+* **Operational Intent & Post Purpose** (with a total of 4 categories that are: Software Benchmarking & Technical Workflow, Bid Strategy, Scope Gaps & GC Relations, Career Pathing, Compensation & Hiring, and Industry Venting & Operational Burnout)
+* **Poster Role & Expertise Level** (with a total of 4 categories that are: Senior B2B Mechanical Estimator / Chief Estimator, General Contractor (GC) Precon Coordinator, Field Tech / Residential Installer / Apprentice, and Software Vendor / Sales Representative)
+
+By establishing these distinct boundaries, the LoRA (Low Rank Adaptation) classifier evaluates both the technical scope and user intent behind every post, allowing high-value peer expertise and technical queries to be sorted cleanly from marketing noise, career advice, and entry-level discussions.
 
 ---
 
 ## Label Taxonomy
-
 <!-- Each label: a one-sentence definition and two real examples from your
      reading. Then your decision rule for the hardest boundary.
 
