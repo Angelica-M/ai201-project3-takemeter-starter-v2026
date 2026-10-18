@@ -288,11 +288,17 @@ By establishing these distinct boundaries, the LoRA (Low Rank Adaptation) classi
 
 **Which two labels:**
 `general_pdf_cad_digitizers` vs. `specialized_mechanical_estimating_databases`
+Distinction is difficult because both categories share the same surface‑level functions:
+both measure lengths and areas, allow markup, import PDFs or CAD files, and export quantities.  This overlap means that a post or product description may look mechanical, even when the underlying tool is just a general digitizer. The main sources of confusion are: 
+* **Shared core functionality**: Every digitizer measures drawings, so measurement alone is not a reliable indicator.
+* **Trade context does not guarantee specialization**: A general digitizer used by an HVAC estimator is still general‑purpose; the trade context is misleading.
+* **Marketing language is vague**: Many tools advertise “HVAC takeoff” or “MEP workflows” without offering true mechanical automation.
+* **Partial feature sets**: Some tools include one mechanical feature (e.g., duct symbols) but lack assemblies, labor databases, or pricing—making them hybrid and hard to classify.
+* **User workflows mask tool capability**: Estimators often build their own assemblies manually inside general tools, making the tool appear specialized when it isn’t.
 
 **The decision rule I used every time:**
-If the post mentions trade-specific automated features (such as MCAA labor units, fitting/elbow auto-assembly generation, or material pricing feeds), classify it as `specialized_mechanical_estimating_databases`. If the post focuses purely on manual spatial measurement, drawing scaling, general markup tools, or generic PDF export functions without automated trade assemblies, classify it as `general_pdf_cad_digitizers` regardless of the trade context mentioned.
-
-/////////////////////////////////////////////////////////
+1. Specialized MEP/HVAC digitizers add domain‑specific automation that ties measurements to mechanical systems; these features transform raw geometry into mechanical assemblies, not just measurements. Classify it as `specialized_mechanical_estimating_databases`, if the post describes trade-specific features that automatically translate measurements into mechanical components (e.g., MCAA/PHCC labor units, fitting/elbow auto-assembly generation, pressure‑class logic, or live material pricing feeds). More specifically, these are the tasks automatic fitting and elbow generation based on duct/pipe routing, MCAA or PHCC labor units tied to each component, material pricing feeds from suppliers, system‑aware assemblies (e.g., duct sections with hangers, insulation, transitions), trade‑specific rules (e.g., pressure class, gauge, joint type), and automatic BOM creation for mechanical systems.
+2. General CAD/PDF digitizers focus purely on universal measurement and markup tasks; these tools are intentionally trade‑agnostic. They work for architecture, civil, landscaping, electrical, plumbing, HVAC, or any discipline because they only measure geometry. If the post focuses solely on manual spatial measurement (these are universal measurement tasks like length, area, and count takeoffs), drawing scaling, basic annotation and markup (general markup tools), or tools related to generic PDF/CAD navigation tools or exporting quantitites to spreadsheets functions (without any automated mechanical assemblies or trade‑specific databases), classify it as `general_pdf_cad_digitizers` regardless of the trade context mentioned (even if the user is performing HVAC or piping takeoff).
 
 ---
 
