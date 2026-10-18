@@ -43,7 +43,7 @@
 
 ## What This Does: Your community, and what your classifier sorts posts into.
 
-TakeMeter targets **r/estimators**, a specialized online Reddit community where construction estimators, preconstruction managers, trade contractors, and software vendors discuss plan takeoffs, bidding strategies, software tools, and industry practices. The posts in this subreddit range from highly technical discussions about sheet metal weight calculations and complex mechanical scope gaps to general career questions, software sales pitches, and bid-day frustration posts. To analyze and categorize these posts effectively, TakeMeter sorts incoming community content into five core taxonomy distinctions:
+TakeMeter targets **r/estimators**, a specialized online Reddit community where construction estimators, preconstruction managers, trade contractors, and software vendors discuss plan takeoffs, bidding strategies, software tools, and industry practices. The posts in this subreddit range from highly technical discussions about sheet metal weight calculations and complex mechanical scope gaps to general career questions, software sales pitches, and bid-day frustration posts. To analyze and categorize (label) these posts effectively, TakeMeter sorts incoming community content into five core taxonomy distinctions:
 
 * All 5 Taxonomy Distinctions are
 * **Trade Scope & Division Boundaries** (with a total of 4 categories that are: Division 23 (Full Mechanical/HVAC), Sub-Trade Specialty (Sheet Metal vs. Hydronics/Piping), MEP Package (Mechanical/Plumbing/Electrical), and General Construction / Non-Mechanical)
@@ -59,39 +59,240 @@ By establishing these distinct boundaries, the LoRA (Low Rank Adaptation) classi
 ## Label Taxonomy
 <!-- Each label: a one-sentence definition and two real examples from your
      reading. Then your decision rule for the hardest boundary.
-
      The decision rule is worth a point on its own and it's the thing most
      people leave out. Every taxonomy has a hardest boundary. Name yours. -->
 
-### `label_one`
+### `division_23_full_mechanical_hvac` 
 
-**Definition:**
-
-**Example 1:**
->
-
-**Example 2:**
->
-
-### `label_two`
-
-**Definition:**
+**Definition:** Posts covering entire building mechanical and environmental control systems under a single prime mechanical quote, combining sheet metal, equipment schedules, and hydronic piping.
+* **Label 1:** *Division 23 (Full Mechanical/HVAC)* — **Taxonomy Distinction 1:** *Trade Scope & Division Boundaries*
 
 **Example 1:**
->
+> We are bidding a complete Div 23 package on a 4-story medical office building, including the chillers, AHUs, and ductwork installation.
 
 **Example 2:**
->
+> Looking for feedback on how to structure our prime HVAC package bid form when RTU and VRF options are both listed as add-alternates.
+
+### `sub_trade_specialty_sheet_metal_vs_hydronics`
+
+**Definition:** Discussions strictly focused on granular trade-specific takeoffs such as ductwork weight/gauge calculations, fitting counts, or specialized piping materials.
+* **Label 2:** *Sub-Trade Specialty (Sheet Metal vs. Hydronics/Piping)* — **Taxonomy Distinction 1:** *Trade Scope & Division Boundaries*
+
+**Example 1:**
+> What labor factor do you apply per pound of heavy-gauge welded ductwork versus standard SMACNA spiral duct?
+
+**Example 2:**
+> Need advice on calculating fitting counts and linear footage for a large chilled water PEX supply line takeoff in PlanSwift.
+
+### `mep_package_mechanical_plumbing_electrical`
+
+**Definition:** Posts resolving scope overlaps, omissions, or package coordination boundaries between mechanical, plumbing, and electrical trades.
+* **Label 3:** *MEP Package (Combination Mechanical/Plumbing/Electrical)* — **Taxonomy Distinction 1:** *Trade Scope & Division Boundaries*
+
+**Example 1:**
+> Who typically covers the line voltage controls and motor starters on your jobs—the Div 23 mechanical sub or Div 26 electrical?
+
+**Example 2:**
+> How do you catch scope gaps between Div 22 plumbing condensate drains and Div 23 equipment hookups during preconstruction review?
+
+### `general_construction_non_mechanical`
+
+**Definition:** Queries focused strictly on non-HVAC trade takeoffs, acting as a negative filter for structural, civil, or architectural trade discussions.
+* **Label 4:** *General Construction / Non-Mechanical* — **Taxonomy Distinction 1:** *Trade Scope & Division Boundaries*
+
+**Example 1:**
+> Estimating concrete slab yardage and rebar quantities for a tilt-wall warehouse expansion using Bluebeam Revu.
+
+**Example 2:**
+> What is the average square-foot unit price you use for Div 9 drywall and metal framing on commercial interior buildouts?
+
+### `general_pdf_cad_digitizers`
+
+**Definition:** Discussions centered on manual 2D quantity extraction, scale calibration, drawing markups, and basic PDF takeoff software without trade-specific database assemblies.
+* **Label 5:** *General PDF & CAD Digitizers* — **Taxonomy Distinction 2:** *Software Stack & Tooling Architecture*
+
+**Example 1:**
+> Having trouble getting custom columns and tool chest symbol counts to export cleanly from Bluebeam Revu to Excel.
+
+**Example 2:**
+> What is the best way to calibrate page scales across overlay drawings when vector PDFs have distorted dimensions?
+
+### `specialized_mechanical_estimating_databases`
+
+**Definition:** Technical queries evaluating database software that automatically calculates fitting counts, material pricing feeds, and MCAA labor unit hours per unit.
+* **Label 6:** *Specialized Mechanical Estimating Databases* — **Taxonomy Distinction 2:** *Software Stack & Tooling Architecture*
+
+**Example 1:**
+> How does Trimble AutoBid Mechanical compare to FastPIPE when setting up custom auto-fitting assembly rules and labor multipliers?
+
+**Example 2:**
+> Is anyone integrating Harrison Publishing pricing feeds directly into QuoteSoft to keep material costs updated automatically?
+
+### `enterprise_erp_bidding_platforms`
+
+**Definition:** High-level workflow discussions regarding invitation to bid (ITB) management, subcontractor bid matrix creation, and ERP accounting synchronization.
+* **Label 7:** *Enterprise ERP & Bidding Platforms* — **Taxonomy Distinction 2:** *Software Stack & Tooling Architecture*
+
+**Example 1:**
+> How are you handling bid coverage tracking and ITB distribution through BuildingConnected vs Procore Bid Board?
+
+**Example 2:**
+> Looking for best practices when transferring awarded estimate job costs from ConstructConnect into Spectrum ERP.
+
+### `emerging_ai_automation_tools`
+
+**Definition:** Experimental or analytical posts evaluating AI, machine learning, OCR, or scripts for automated plan indexing and symbol counting.
+* **Label 8:** *Emerging AI & Automation Tools* — **Taxonomy Distinction 2:** *Software Stack & Tooling Architecture*
+
+**Example 1:**
+> Has anyone tested Togal.ai or TakeoffBuilder for auto-detecting equipment symbols on vector mechanical sheets?
+
+**Example 2:**
+> I wrote a Python script using OCR to parse drawing spec books and auto-link equipment schedules to plan callouts.
+
+### `commercial_institutional_industrial`
+
+**Definition:** High-value B2B plan-and-spec or design-build project estimates requiring formal specification reviews, unit pricing breakdowns, and structured bid forms.
+* **Label 9:** *Commercial / Institutional / Industrial (Mid–Large B2B)* — **Taxonomy Distinction 3:** *Project Sector & Delivery Model*
+
+**Example 1:**
+> Bidding a $4M plan-and-spec central plant overhaul for a university campus with strict long-lead equipment requirements.
+
+**Example 2:**
+> How do you handle submittal addendums and RFI clarifications when pricing a commercial hospital expansion under a design-build model?
+
+### `multi_family_residential_tract_housing`
+
+**Definition:** Repetitive wood-frame residential or apartment estimating based on price-per-square-foot, per-unit, or per-door metrics.
+* **Label 10:** *Multi-Family Residential / Tract Housing* — **Taxonomy Distinction 3:** *Project Sector & Delivery Model*
+
+**Example 1:**
+> What is your typical price-per-door or per-unit estimate for DX split system installs on a 200-unit multi-family apartment complex?
+
+**Example 2:**
+> Estimating wood-frame tract housing HVAC layouts using piece-rate labor pricing instead of detailed commercial sheet metal takeoffs.
+
+### `service_replacement_retrofit_bidding`
+
+**Definition:** Quick-turnaround commercial service bids, equipment changeouts, or time-and-material quotes with short diagnostic-to-quote cycles.
+* **Label 11:** *Service, Replacement & Retrofit Bidding* — **Taxonomy Distinction 3:** *Project Sector & Delivery Model*
+
+**Example 1:**
+> How do you factor crane rigging and roof curb adaptor costs when quoting a rapid weekend Carrier RTU replacement?
+
+**Example 2:**
+> Looking for standard T&M labor rates and markup percentages on commercial HVAC preventive maintenance service agreements.
+
+### `public_works_prevailing_wage_bidding`
+
+**Definition:** Government or public sector bidding involving certified payroll, Davis-Bacon prevailing wage determinations, and strict sealed bid procedures.
+* **Label 12:** *Public Works / Prevailing Wage Bidding* — **Taxonomy Distinction 3:** *Project Sector & Delivery Model*
+
+**Example 1:**
+> How do you adjust your labor pricing models when bidding public school projects subject to local prevailing wage rates?
+
+**Example 2:**
+> Dealing with MWBE/DBE subcontracting goals and bonding limits on a sealed bid public works municipal building.
+
+### `software_benchmarking_technical_workflow`
+
+**Definition:** Posts evaluating features, pricing tiers, system stability, and speed efficiency across competing estimating software platforms.
+* **Label 13:** *Software Benchmarking & Technical Workflow* — **Taxonomy Distinction 4:** *Operational Intent & Post Purpose*
+
+**Example 1:**
+> Comparing PlanSwift vs Trimble AutoBid: is the database setup time worth the upgrade for a 10-person estimating team?
+
+**Example 2:**
+> Our digitizer software keeps crashing on 200MB CAD vector sheets—looking for benchmark recommendations for smoother workflow performance.
+
+### `bid_strategy_scope_gaps_gc_relations`
+
+**Definition:** Operational posts on protecting profit margins, managing incomplete drawings, writing exclusions, and handling general contractor bid deadlines.
+* **Label 14:** *Bid Strategy, Scope Gaps & GC Relations* — **Taxonomy Distinction 4:** *Operational Intent & Post Purpose*
+
+**Example 1:**
+> How do you protect your quote against scope creep when GC drawings are only 60% CDs on bid day?
+
+**Example 2:**
+> What standard exclusions list do you attach to your mechanical proposals to avoid eating unpriced GC scope gaps?
+
+### `career_pathing_compensation_hiring`
+
+**Definition:** Discussions regarding estimator compensation packages, remote work options, workload expectations, and career advancement paths.
+* **Label 15:** *Career Pathing, Compensation & Hiring* — **Taxonomy Distinction 4:** *Operational Intent & Post Purpose*
+
+**Example 1:**
+> What is the market compensation rate and bonus structure for a Senior Mechanical Chief Estimator in a major metro area?
+
+**Example 2:**
+> Is 5 full commercial plan takeoffs per week a reasonable workload expectation for a junior estimator working remotely?
+
+### `industry_venting_operational_burnout`
+
+**Definition:** Frustration-driven posts highlighting bid-day stress, last-minute addendums, unrealistic GC deadlines, and industry friction points.
+* **Label 16:** *Industry Venting & Operational Burnout* — **Taxonomy Distinction 4:** *Operational Intent & Post Purpose*
+
+**Example 1:**
+> GC sent out a 150-page addendum 2 hours before the bid due date and still expects full itemized breakdowns.
+
+**Example 2:**
+> Tired of working weekends doing takeoffs only for GCs to ghost us on bid results and re-bid the project three months later.
+
+### `senior_b2b_mechanical_estimator_chief_estimator`
+
+**Definition:** Posts authored by experienced professionals demonstrating deep industry terminology, calibrated labor multipliers, and strategic risk management.
+* **Label 17:** *Senior B2B Mechanical Estimator / Chief Estimator* — **Taxonomy Distinction 5:** *Poster Role & Expertise Level*
+
+**Example 1:**
+> After 20 years as Chief Estimator, here is how we calibrate MCAA labor units against historical shop performance data to maintain a 25% win rate.
+
+**Example 2:**
+> My rule of thumb for overhead recovery on $5M+ mechanical packages is to isolate equipment quotes from field labor units before applying burden.
+
+### `general_contractor_precon_coordinator`
+
+**Definition:** Posts written from the buyer perspective evaluating how subcontractor quotes are reviewed, leveled, and combined into a prime bid.
+* **Label 18:** *General Contractor (GC) Precon Coordinator* — **Taxonomy Distinction 5:** *Poster Role & Expertise Level*
+
+**Example 1:**
+> From the GC precon side: why do mechanical subs wait until 10 minutes before bid closing to submit their scope sheets?
+
+**Example 2:**
+> What is your process for leveling three wildly different HVAC subcontractor quotes when scope inclusions are missing?
+
+### `field_tech_residential_installer_apprentice`
+
+**Definition:** Entry-level or field-focused posts seeking guidance on transitioning into the office, reading blueprints, or beginner tools.
+* **Label 19:** *Field Tech / Residential Installer / Apprentice* — **Taxonomy Distinction 5:** *Poster Role & Expertise Level*
+
+**Example 1:**
+> Just transitioned from being a field HVAC tech to junior estimator—what is the easiest way to learn blueprint reading and scale takeoffs?
+
+**Example 2:**
+> Field installer moving into office precon next month—looking for recommendations on software tutorials for someone starting from scratch.
+
+### `software_vendor_sales_representative`
+
+**Definition:** Posts or replies containing self-promotional pitches, demo offers, or vendor-driven product marketing.
+* **Label 20:** *Software Vendor / Sales Representative* — **Taxonomy Distinction 5:** *Poster Role & Expertise Level*
+
+**Example 1:**
+> DM me if you'd like to schedule a quick demo of our platform—we auto-detect mechanical symbols and export straight to Excel.
+
+**Example 2:**
+> We solved this exact problem with our automated AI takeoff software—check out our website for a 14-day free trial.
 
 ### The hardest boundary
-
-**Which two labels:**
-
-**The decision rule I used every time:**
 <!-- e.g. "If the post names a specific checkable fact, it's `analysis`, even
      if the tone is heated." -->
 
+**Which two labels:**
+`general_pdf_cad_digitizers` vs. `specialized_mechanical_estimating_databases`
 
+**The decision rule I used every time:**
+If the post mentions trade-specific automated features (such as MCAA labor units, fitting/elbow auto-assembly generation, or material pricing feeds), classify it as `specialized_mechanical_estimating_databases`. If the post focuses purely on manual spatial measurement, drawing scaling, general markup tools, or generic PDF export functions without automated trade assemblies, classify it as `general_pdf_cad_digitizers` regardless of the trade context mentioned.
+
+/////////////////////////////////////////////////////////
 
 ---
 
