@@ -45,12 +45,13 @@
 
 TakeMeter targets **r/estimators**, a specialized online Reddit community where construction estimators, preconstruction managers, trade contractors, and software vendors discuss plan takeoffs, bidding strategies, software tools, and industry practices. The posts in this subreddit range from highly technical discussions about sheet metal weight calculations and complex mechanical scope gaps to general career questions, software sales pitches, and bid-day frustration posts. To analyze and categorize (label) these posts effectively, TakeMeter sorts incoming community content into five core taxonomy distinctions:
 
-* All 5 Taxonomy Distinctions are
+* All 6 Taxonomy Distinctions are
 * **Trade Scope & Division Boundaries** (with a total of 4 categories that are: Division 23 (Full Mechanical/HVAC), Sub-Trade Specialty (Sheet Metal vs. Hydronics/Piping), MEP Package (Mechanical/Plumbing/Electrical), and General Construction / Non-Mechanical)
 * **Software Stack & Tooling Architecture** (with a total of 4 categories that are: General PDF & CAD Digitizers, Specialized Mechanical Estimating Databases, Enterprise ERP & Bidding Platforms, and Emerging AI & Automation Tools)
 * **Project Sector & Delivery Model** (with a total of 4 categories that are: Commercial / Institutional / Industrial (Mid–Large B2B), Multi-Family Residential / Tract Housing, Service, Replacement & Retrofit Bidding, and Public Works / Prevailing Wage Bidding)
 * **Operational Intent & Post Purpose** (with a total of 4 categories that are: Software Benchmarking & Technical Workflow, Bid Strategy, Scope Gaps & GC Relations, Career Pathing, Compensation & Hiring, and Industry Venting & Operational Burnout)
 * **Poster Role & Expertise Level** (with a total of 4 categories that are: Senior B2B Mechanical Estimator / Chief Estimator, General Contractor (GC) Precon Coordinator, Field Tech / Residential Installer / Apprentice, and Software Vendor / Sales Representative)
+* **Unrelated** (a single stand-alone category to catch any input posts that do not meet or closely align with any of the other Taxonomy Distinctions and their categories)
 
 By establishing these distinct boundaries, the LoRA (Low Rank Adaptation) classifier evaluates both the technical scope and user intent behind every post, allowing high-value peer expertise and technical queries to be sorted cleanly from marketing noise, career advice, and entry-level discussions.
 
@@ -282,7 +283,18 @@ By establishing these distinct boundaries, the LoRA (Low Rank Adaptation) classi
 **Example 2:**
 > We solved this exact problem with our automated AI takeoff software—check out our website for a 14-day free trial.
 
-### The hardest boundary
+### `unrelated` 
+
+**Definition:** Catch-all category for posts that fall entirely outside construction precon, bidding, and estimating software—such as generic financial advice, unrelated software programming queries, random spam, or general sub trades asking non-estimating jobsite questions.
+* **Label 21:** *Unrelated* — **Taxonomy Distinction 6:** *Unrelated*
+
+**Example 1:**
+> What are the best Tax-Free Savings Account (TFSA) index funds for long-term passive investing if I want to retire in my 50s?
+
+**Example 2:**
+> Does anyone have a good python script to automatically download attached PDF invoices from Outlook emails and save them to a local Google Drive folder?
+
+### The 1st Hardest Boundary
 <!-- e.g. "If the post names a specific checkable fact, it's `analysis`, even
      if the tone is heated." -->
 
@@ -299,6 +311,14 @@ both measure lengths and areas, allow markup, import PDFs or CAD files, and expo
 **The decision rule I used every time:**
 1. Specialized MEP/HVAC digitizers add domain‑specific automation that ties measurements to mechanical systems; these features transform raw geometry into mechanical assemblies, not just measurements. Classify it as `specialized_mechanical_estimating_databases`, if the post describes trade-specific features that automatically translate measurements into mechanical components (e.g., MCAA/PHCC labor units, fitting/elbow auto-assembly generation, pressure‑class logic, or live material pricing feeds). More specifically, these are the tasks automatic fitting and elbow generation based on duct/pipe routing, MCAA or PHCC labor units tied to each component, material pricing feeds from suppliers, system‑aware assemblies (e.g., duct sections with hangers, insulation, transitions), trade‑specific rules (e.g., pressure class, gauge, joint type), and automatic BOM creation for mechanical systems.
 2. General CAD/PDF digitizers focus purely on universal measurement and markup tasks; these tools are intentionally trade‑agnostic. They work for architecture, civil, landscaping, electrical, plumbing, HVAC, or any discipline because they only measure geometry. If the post focuses solely on manual spatial measurement (these are universal measurement tasks like length, area, and count takeoffs), drawing scaling, basic annotation and markup (general markup tools), or tools related to generic PDF/CAD navigation tools or exporting quantitites to spreadsheets functions (without any automated mechanical assemblies or trade‑specific databases), classify it as `general_pdf_cad_digitizers` regardless of the trade context mentioned (even if the user is performing HVAC or piping takeoff).
+
+### The 2nd Hardest Boundary 
+
+**Which two labels:**
+`general_construction_non_mechanical` vs. `unrelated`
+
+**The decision rule I used every time:**
+If a post discusses preconstruction workflows, takeoff measurements, bluebeam markups, or material/labor pricing for non-HVAC construction trades (such as concrete, framing, or electrical), classify it under its respective trade category or `general_construction_non_mechanical`. Classify a post as `unrelated` **only** if it contains no construction estimation, bidding, takeoff, or precon content whatsoever (e.g., general personal finance, non-estimating coding scripts, jobsite safety memes, or spam).
 
 ---
 
