@@ -7,11 +7,11 @@ import time
 import requests
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
-from dotenv import load_dotenv  # <--- ADD THIS
+from dotenv import load_dotenv  
 import google.generativeai as genai
 
 # Load environment variables from the local .env file
-load_dotenv()  # <--- ADD THIS
+load_dotenv()  
 
 # 1. Configure Gemini API
 # Ensure GEMINI_API_KEY is set in your environment variables
@@ -228,7 +228,9 @@ def fetch_reddit_posts(subreddit="estimators", limit=210):
 
 def label_post_with_gemini(post_text):
     """Calls Gemini API to rank semantic labels. Returns (label, note) or None if every attempt failed."""
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    # Model id updated: 'gemini-2.5-flash' now returns 404 ("no longer available to new users") for this key, which made
+    # every post fail. 'gemini-3.8-flash' is the replacement Google's error recommended and it appears in list_models().
+    model = genai.GenerativeModel('gemini-3.8-flash')
 
     # Retry instead of the old silent fallback label: a made-up label would be written as real data and silently
     # pollute the dataset. If all attempts fail, the caller skips the post.
