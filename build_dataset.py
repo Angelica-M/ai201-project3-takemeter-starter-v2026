@@ -20,7 +20,8 @@ genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 # Output file: the existing labels.csv the notebook reads (data/labels.csv), not a new file in the cwd.
 OUTPUT_CSV = os.path.join("data", "labels.csv")
 COLD_COUNT = 20          # first N rows get "cold" in the note column (labelled with no prior pass)
-GEMINI_DELAY_SECONDS = 4 # pause between Gemini calls to stay under free-tier requests-per-minute limits
+GEMINI_MODEL = "gemini-3.1-flash-lite"  # see the model-choice comment in label_post_with_gemini
+GEMINI_DELAY_SECONDS = 4# pause between Gemini calls to stay under free-tier requests-per-minute limits
 GEMINI_MAX_ATTEMPTS = 3  # retries per post before that post is skipped (never written with a made-up label)
 
 TAXONOMY_LABELS = [
@@ -226,11 +227,17 @@ def fetch_reddit_posts(subreddit="estimators", limit=210):
     
     print(f"STOPPED: All time windows {RSS_TIME_WINDOWS} are exhausted (no more unseen matching posts). Posts obtained before this: {yielded}.")
 
+class DailyQuotaExhausted(Exception):
+    """Raised when Gemini's free-tier requests-per-day quota is used up."""
+
 def label_post_with_gemini(post_text):
     """Calls Gemini API to rank semantic labels. Returns (label, note) or None if every attempt failed."""
     # Model id updated: 'gemini-2.5-flash' now returns 404 ("no longer available to new users") for this key, which made
     # every post fail. 'gemini-3.8-flash' is the replacement Google's error recommended and it appears in list_models().
-    model = genai.GenerativeModel('gemini-3.8-flash')
+    # Second change: 'gemini-3.8-flash' on the free tier allows only 20 requests/day (HTTP 429, quota_value 20), far
+    # short of 200 posts. 'gemini-3.1-flash-lite' accepted requests when probed and suits a 21-way classification
+    # task. One model is used for ALL rows so labelling is consistent across the dataset.
+    model = genai.GenerativeModel(GEMINI_MODEL)
 
     # Retry instead of the old silent fallback label: a made-up label would be written as real data and silently
     # pollute the dataset. If all attempts fail, the caller skips the post.
@@ -256,6 +263,10 @@ def label_post_with_gemini(post_text):
             return chosen_label, note
 
         except Exception as e:
+            # A per-DAY quota error cannot be fixed by retrying (reset can be hours away), so stop the whole run
+            # cleanly instead of burning attempts and skipping every remaining post.
+            if "PerDay" in str(e):
+                raise DailyQuotaExhausted(str(e).splitlines()[0])
             print(f"API Error (attempt {attempt}/{GEMINI_MAX_ATTEMPTS}): {e}")
             time.sleep(10 * attempt)  # linear backoff; also rides out rate-limit (429) errors
     return None
@@ -273,7 +284,11 @@ def main():
         f.flush()
 
         for idx, post in enumerate(fetch_reddit_posts(limit=200)):
-            result = label_post_with_gemini(post)
+            try:
+                result = label_post_with_gemini(post)
+            except DailyQuotaExhausted as e:
+                print(f"STOPPED: Gemini daily quota exhausted ({e}). Rows written before this: {written}.")
+                break
             if result is None:
                 skipped += 1
                 print(f"Skipped post {idx + 1}: Gemini failed {GEMINI_MAX_ATTEMPTS} times.")
