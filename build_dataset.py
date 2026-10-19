@@ -3,6 +3,7 @@
 import csv
 import json
 import os
+import re
 import time
 import requests
 import xml.etree.ElementTree as ET
@@ -11,7 +12,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 # Load environment variables from the local .env file
-load_dotenv()  
+load_dotenv(override=True)  # override: a stale GEMINI_API_KEY in the OS environment must not shadow the key in .env  
 
 # 1. Configure Gemini API
 # Ensure GEMINI_API_KEY is set in your environment variables
@@ -20,7 +21,14 @@ genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 # Output file: the existing labels.csv the notebook reads (data/labels.csv), not a new file in the cwd.
 OUTPUT_CSV = os.path.join("data", "labels.csv")
 COLD_COUNT = 20          # first N rows get "cold" in the note column (labelled with no prior pass)
-GEMINI_MODEL = "gemini-3.1-flash-lite"  # see the model-choice comment in label_post_with_gemini
+# Models to try, in order; filtered to those the API key can actually see. Lite models first: they accepted requests
+# when probed and have the roomiest free-tier daily quota. See ModelPool for how rotation works.
+GEMINI_MODEL_PREFERENCE = [
+    "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-flash-lite-latest",
+    "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest",
+    "gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro",
+    "gemini-3.1-pro-preview", "gemini-pro-latest",
+]
 GEMINI_DELAY_SECONDS = 4# pause between Gemini calls to stay under free-tier requests-per-minute limits
 GEMINI_MAX_ATTEMPTS = 3  # retries per post before that post is skipped (never written with a made-up label)
 
@@ -227,21 +235,69 @@ def fetch_reddit_posts(subreddit="estimators", limit=210):
     
     print(f"STOPPED: All time windows {RSS_TIME_WINDOWS} are exhausted (no more unseen matching posts). Posts obtained before this: {yielded}.")
 
-class DailyQuotaExhausted(Exception):
-    """Raised when Gemini's free-tier requests-per-day quota is used up."""
+class AllModelsExhausted(Exception):
+    """Raised when every candidate Gemini model has failed in this run (message = full per-model report)."""
 
-def label_post_with_gemini(post_text):
-    """Calls Gemini API to rank semantic labels. Returns (label, note) or None if every attempt failed."""
-    # Model id updated: 'gemini-2.5-flash' now returns 404 ("no longer available to new users") for this key, which made
-    # every post fail. 'gemini-3.8-flash' is the replacement Google's error recommended and it appears in list_models().
-    # Second change: 'gemini-3.8-flash' on the free tier allows only 20 requests/day (HTTP 429, quota_value 20), far
-    # short of 200 posts. 'gemini-3.1-flash-lite' accepted requests when probed and suits a 21-way classification
-    # task. One model is used for ALL rows so labelling is consistent across the dataset.
-    model = genai.GenerativeModel(GEMINI_MODEL)
+class ModelPool:
+    """Tracks which Gemini models are still usable. Design: stay on ONE model until it fails for good, then rotate to the
+    next, so most rows are labelled by the same model (consistency) while a dead/over-quota model never stops the run."""
+    def __init__(self, candidates):
+        self.candidates = candidates
+        self.dead = {}  # model name -> (error code, reason); filled as models fail
+        self.uses = {name: 0 for name in candidates}  # rows labelled per model, printed at the end
 
+    def current(self):
+        for name in self.candidates:
+            if name not in self.dead:
+                return name
+        raise AllModelsExhausted(self.report())
+
+    def mark_dead(self, name, code, reason):
+        self.dead[name] = (code, reason)
+        print(f"MODEL ROTATION: '{name}' unusable (error {code}: {reason}). Remaining: {[m for m in self.candidates if m not in self.dead]}")
+
+    def report(self):
+        lines = ["ALL GEMINI MODELS FAILED - no models left to rotate to. Models tried and why each failed:"]
+        for name in self.candidates:
+            code, reason = self.dead.get(name, ("-", "not tried"))
+            lines.append(f"  - {name}: error {code} - {reason}")
+        lines.append("No usable model remains (every model available to this API key returned an error). Quotas reset daily; "
+                     "add a new key to .env or rerun later - rows already labelled in labels.csv are kept and the run resumes from them.")
+        return "\n".join(lines)
+
+def discover_models():
+    """Lists models this API key can call, preferred ones first, then any other plain text Gemini flash/pro model."""
+    # list_models() reflects the free-tier account's real access, so we never try ids the key cannot see at all.
+    available = {m.name.replace("models/", "") for m in genai.list_models() if "generateContent" in m.supported_generation_methods}
+    ordered = [m for m in GEMINI_MODEL_PREFERENCE if m in available]
+    # Extras: only text flash/pro ids (regex skips tts/image/robotics/computer-use/deep-research variants that cannot do this task)
+    pattern = re.compile(r"gemini-[\d.]+-(flash|pro)(-lite)?(-preview)?|gemini-(flash|pro)(-lite)?-latest")
+    ordered += sorted(m for m in available if pattern.fullmatch(m) and m not in ordered)
+    return ordered
+
+def _error_code(e):
+    code = getattr(e, "code", None)  # google.api_core exceptions carry the HTTP status as .code
+    try:
+        return int(code)
+    except (TypeError, ValueError):
+        found = re.search(r"\b([45]\d\d)\b", str(e))
+        return int(found.group(1)) if found else "unknown"
+
+def _short_reason(e):
+    return " ".join(str(e).split())[:220]  # one line, capped, so the terminal log stays readable
+
+def label_post_with_gemini(post_text, pool):
+    """Calls Gemini API to rank semantic labels. Returns (label, note, model_name), or None if this post cannot be
+    labelled. Raises AllModelsExhausted when no model is left."""
+    # Model-choice history: 'gemini-2.5-flash' returns 404 for this key, and 'gemini-3.8-flash' allows only 20 requests/day
+    # on the free tier. Hence a rotating pool (see ModelPool) instead of one hard-coded model.
     # Retry instead of the old silent fallback label: a made-up label would be written as real data and silently
-    # pollute the dataset. If all attempts fail, the caller skips the post.
-    for attempt in range(1, GEMINI_MAX_ATTEMPTS + 1):
+    # pollute the dataset. If a post cannot be labelled it stays unlabelled for a later run.
+    bad_output_attempts = 0
+    transient_attempts = {}  # per-model count of transient failures (rate limit / 5xx) for THIS post
+    while True:
+        model_name = pool.current()  # raises AllModelsExhausted when every model is dead
+        model = genai.GenerativeModel(model_name)
         try:
             response = model.generate_content(
                 f"{LABELING_PROMPT}\n\nPost Content:\n\"{post_text}\"",
@@ -260,58 +316,111 @@ def label_post_with_gemini(post_text):
             reason = str(result["reason"]).strip()
 
             note = f"Highest semantic match of {h_score}% for {chosen_label} (with 2nd highest of {sec_score}% as {sec_label}) due to {reason}"
-            return chosen_label, note
+            pool.uses[model_name] += 1
+            return chosen_label, note, model_name
+
+        except (json.JSONDecodeError, ValueError, KeyError, TypeError, AttributeError) as e:
+            # Model answered but with unusable output (bad JSON, invented label, blocked response): a POST problem, not
+            # a model problem, so retry the same model and never mark it dead.
+            bad_output_attempts += 1
+            print(f"Bad output from {model_name} (attempt {bad_output_attempts}/{GEMINI_MAX_ATTEMPTS}): {_short_reason(e)}")
+            if bad_output_attempts >= GEMINI_MAX_ATTEMPTS:
+                return None
+            time.sleep(2)
 
         except Exception as e:
-            # A per-DAY quota error cannot be fixed by retrying (reset can be hours away), so stop the whole run
-            # cleanly instead of burning attempts and skipping every remaining post.
-            if "PerDay" in str(e):
-                raise DailyQuotaExhausted(str(e).splitlines()[0])
-            print(f"API Error (attempt {attempt}/{GEMINI_MAX_ATTEMPTS}): {e}")
-            time.sleep(10 * attempt)  # linear backoff; also rides out rate-limit (429) errors
-    return None
+            code, msg = _error_code(e), str(e)
+            # Permanent for this run -> rotate immediately: 404 (model retired / not available to this key), 403/401
+            # (no permission or bad key), and any per-DAY quota 429 (reset is hours away, retrying is pointless).
+            if "PerDay" in msg or code in (401, 403, 404):
+                pool.mark_dead(model_name, code, _short_reason(e))
+                continue
+            # Transient (per-minute 429, 5xx, network): wait and retry the same model a few times, then rotate.
+            transient_attempts[model_name] = transient_attempts.get(model_name, 0) + 1
+            if transient_attempts[model_name] >= GEMINI_MAX_ATTEMPTS:
+                pool.mark_dead(model_name, code, f"failed {GEMINI_MAX_ATTEMPTS} times in a row: {_short_reason(e)}")
+                continue
+            hint = re.search(r"retry in ([\d.]+)s|seconds:\s*(\d+)", msg)  # Google states how long to wait on 429s
+            wait = min(float(hint.group(1) or hint.group(2)), 65) if hint else 10 * transient_attempts[model_name]
+            print(f"Transient error {code} from {model_name} (attempt {transient_attempts[model_name]}/{GEMINI_MAX_ATTEMPTS}); waiting {wait:.0f}s: {_short_reason(e)}")
+            time.sleep(wait)
 
-def main():
-    print("Starting row-by-row scrape + AI labeling...")
+def read_rows():
+    """Loads existing labels.csv rows as [text, label, note] lists (empty list if the file is missing/empty)."""
+    if not os.path.exists(OUTPUT_CSV):
+        return []
+    with open(OUTPUT_CSV, newline="", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+    return [(r + ["", "", ""])[:3] for r in rows[1:] if r and r[0].strip()]  # skip header; pad short rows
 
-    written = 0
-    skipped = 0
-    # Header is written once up front, then every row is appended and flushed immediately. Crash-safety design:
-    # if the run dies at post 130, rows 1-129 are already saved in labels.csv rather than lost in memory.
-    with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
+def write_rows(rows):
+    """Rewrites the whole CSV via a temp file + os.replace, so a crash mid-write can never leave a half-written labels.csv."""
+    tmp_path = OUTPUT_CSV + ".tmp"
+    with open(tmp_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["text", "label", "note"])
-        f.flush()
+        writer.writerows(rows)
+    os.replace(tmp_path, OUTPUT_CSV)
 
-        for idx, post in enumerate(fetch_reddit_posts(limit=200)):
-            try:
-                result = label_post_with_gemini(post)
-            except DailyQuotaExhausted as e:
-                print(f"STOPPED: Gemini daily quota exhausted ({e}). Rows written before this: {written}.")
-                break
-            if result is None:
-                skipped += 1
-                print(f"Skipped post {idx + 1}: Gemini failed {GEMINI_MAX_ATTEMPTS} times.")
-                continue
-            label, note_reason = result
+def main():
+    # Two-phase design (replaces the old interleaved fetch+label loop):
+    #   Phase 1 - scrape ALL posts first (the slow, rate-limited Reddit part) and save them in column 1 with empty label/note.
+    #   Phase 2 - label them one by one, saving the file after every row.
+    # Why: Reddit is slow (~60s/request) and Gemini is the flaky part (quotas). Splitting them means a Gemini outage
+    # never costs a re-scrape: the posts are already on disk and the next run resumes at the first unlabelled row.
+    rows = read_rows()
+    if rows and any(not r[1] for r in rows):
+        print(f"Resuming: {len(rows)} posts already in {OUTPUT_CSV}, {sum(1 for r in rows if not r[1])} still unlabelled. Skipping Reddit scrape.")
+    elif rows:
+        print(f"{OUTPUT_CSV} already has all {len(rows)} rows labelled. Delete it to scrape and label again.")
+        return
+    else:
+        print("Phase 1: scraping posts from Reddit...")
+        posts = list(fetch_reddit_posts(limit=200))
+        rows = [[post, "", ""] for post in posts]
+        write_rows(rows)
+        print(f"Phase 1 done: saved {len(rows)} posts to column 1 of {OUTPUT_CSV}.")
+        if not rows:
+            return
 
-            # Mark first 20 as cold per project specs, remaining as pre-labelled
-            # (the hard-coded "pre-labelled, checked" text is gone: every row now carries Gemini's own ranked note)
-            # "written" (not idx) drives this so skipped posts cannot shift which rows count as the first 20.
-            if written < COLD_COUNT:
-                note = f"cold | {note_reason}"
-            else:
-                note = note_reason
+    print("Phase 2: labelling posts with Gemini, one by one...")
+    try:
+        pool = ModelPool(discover_models())
+    except Exception as e:
+        print(f"ERROR: could not list Gemini models with this API key ({_error_code(e)}): {_short_reason(e)}")
+        return
+    print(f"Gemini models to try, in order: {pool.candidates}")
 
-            writer.writerow([post, label, note])
-            f.flush()
-            written += 1
+    skipped = 0
+    for idx, row in enumerate(rows):
+        if row[1]:
+            continue  # already labelled in an earlier run
+        try:
+            result = label_post_with_gemini(row[0], pool)
+        except AllModelsExhausted as e:
+            print(f"\nSTOPPED: {e}\nRows labelled so far: {sum(1 for r in rows if r[1])}/{len(rows)}.")
+            return
+        if result is None:
+            skipped += 1
+            print(f"Skipped post {idx + 1}: Gemini returned unusable output {GEMINI_MAX_ATTEMPTS} times (left unlabelled).")
+            continue
+        label, note_reason, model_name = result
 
-            if written % 25 == 0:
-                print(f"Processed {written} posts...")
-            time.sleep(GEMINI_DELAY_SECONDS)
+        # Mark first 20 as cold per project specs, remaining as pre-labelled
+        # (the hard-coded "pre-labelled, checked" text is gone: every row now carries Gemini's own ranked note)
+        # Cold is decided by the row's position in the file (idx), which is fixed now that all posts exist up front.
+        if idx < COLD_COUNT:
+            note = f"cold | {note_reason}"
+        else:
+            note = note_reason
 
-    print(f"Done. Wrote {written} rows to {OUTPUT_CSV} ({skipped} skipped after Gemini failures).")
+        rows[idx] = [row[0], label, note]
+        write_rows(rows)  # save after EVERY row (crash safety)
+        labelled = sum(1 for r in rows if r[1])
+        print(f"Labelled {labelled}/{len(rows)} (row {idx + 1}, model {model_name}): {label}")
+        time.sleep(GEMINI_DELAY_SECONDS)
+
+    print(f"Done. {sum(1 for r in rows if r[1])}/{len(rows)} rows labelled in {OUTPUT_CSV} ({skipped} skipped). Rows per model: {pool.uses}")
 
 if __name__ == "__main__":
     main()
