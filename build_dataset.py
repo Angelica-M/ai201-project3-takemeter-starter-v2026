@@ -68,7 +68,7 @@ def fetch_reddit_posts(subreddit="estimators", limit=210):
     
     print(f"Fetching posts from r/{subreddit}...")
     while len(posts) < limit:
-        url = f"https://reddit.com{subreddit}/search.json?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t=all&restrict_sr=1&limit=100"
+        url = f"https://reddit.com/r/{subreddit}/search.json?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t=all&restrict_sr=1&limit=100"
         if after:
             url += f"&after={after}"
             
