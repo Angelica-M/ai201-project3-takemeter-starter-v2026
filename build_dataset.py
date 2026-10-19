@@ -12,9 +12,6 @@ import google.generativeai as genai
 load_dotenv()  # <--- ADD THIS
 
 # 1. Configure Gemini API
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-
-# 1. Configure Gemini API
 # Ensure GEMINI_API_KEY is set in your environment variables
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
@@ -56,6 +53,13 @@ Provide your output ONLY as a JSON object matching this structure:
 }}
 """
 
+# Single sweep r/Estimators subreddit must use exact search " self:true (guide OR megathread OR analysis OR "deep dive") " and have
+# native filters set to sort by "Top" and time to "All Time" (prioritizes high-detail quality and recency). 
+# This filters out the brief, low-quality questions that dominate daily feeds; if you do not use it, your results will be flooded 
+# with simple, one-sentence posts or unanswered threads instead of the comprehensive, long-form estimation guides and deeply analyzed 
+# industry discussions you are looking for. Because r/Estimators is a highly specialized, fast-growing professional community, sorting 
+# by Top (All Time) inside that specific sandbox will naturally front-load the absolute highest quality, most heavily engaged professional 
+# insights from the last 1 to 3 years anyway, successfully completing your search in a single action.
 def fetch_reddit_posts(subreddit="estimators", limit=210):
     """Scrapes public posts from Reddit using JSON endpoints."""
     headers = {'User-Agent': 'TakeMeter-Dataset-Scraper/1.0'}
@@ -64,7 +68,7 @@ def fetch_reddit_posts(subreddit="estimators", limit=210):
     
     print(f"Fetching posts from r/{subreddit}...")
     while len(posts) < limit:
-        url = f"https://www.reddit.com/r/{subreddit}/new.json?limit=100"
+        url = f"https://reddit.com{subreddit}/search.json?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t=all&restrict_sr=1&limit=100"
         if after:
             url += f"&after={after}"
             
