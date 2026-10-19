@@ -5,6 +5,8 @@ import json
 import os
 import time
 import requests
+import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
 from dotenv import load_dotenv  # <--- ADD THIS
 import google.generativeai as genai
 
@@ -122,65 +124,107 @@ Provide your output ONLY as a JSON object matching this structure:
 # insights from the last 1 to 3 years anyway, successfully completing your search in a single action.
 # Design: this is now a GENERATOR. It yields one post at a time so main() can label and write each row before the next
 # post is processed (row-by-row), and it halts itself (with a printed reason) instead of ever returning duplicates.
+# Transport change: Reddit now answers anonymous .json requests with HTTP 403 / a login redirect, but still serves the
+# same search as an Atom feed (search.rss) with no login. Atom <content> holds the FULL post body as HTML (tested up to
+# ~12k chars, no truncation), so we parse that instead.
+# Depth change: a single "Top / All Time" search only surfaced 104 matching posts. To reach more without changing the
+# query, the same query is re-run over narrower windows (t=year, month, week, day) and merged; seen_ids de-duplicates
+# across windows so a post that matches several windows is written once.
+RSS_NS = {'a': 'http://www.w3.org/2005/Atom'}
+RSS_TIME_WINDOWS = ["all", "year", "month", "week", "day"]  # widest first so the Top/All Time posts keep priority
+RSS_MIN_WAIT_SECONDS = 60  # anonymous RSS allows ~1 request per window (x-ratelimit-remaining was always 0)
+
+class _TextExtractor(HTMLParser):
+    """Turns the feed's HTML post body into plain text (block tags become spaces, entities are decoded)."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+    def handle_data(self, data):
+        self.parts.append(data)
+    def handle_starttag(self, tag, attrs):
+        if tag in ('p', 'br', 'li', 'div', 'tr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre'):
+            self.parts.append(' ')
+    def handle_endtag(self, tag):
+        if tag in ('p', 'li', 'div', 'tr', 'blockquote', 'pre'):
+            self.parts.append(' ')
+
+def _html_to_text(content_html):
+    # The post body sits between <!-- SC_OFF --> and <!-- SC_ON -->; everything after SC_ON is Reddit's
+    # "submitted by /u/x [link] [comments]" footer, which is not part of the post, so cut it off first.
+    body = content_html.split('<!-- SC_ON -->')[0].replace('<!-- SC_OFF -->', '')
+    extractor = _TextExtractor()
+    extractor.feed(body)
+    return ' '.join(''.join(extractor.parts).split())  # collapse all whitespace/newlines to single spaces
+
+def _get_feed_page(url, headers):
+    """GET one feed page, honoring Reddit's rate limit. Returns (response or None). Retries 429s a few times."""
+    for _ in range(4):
+        res = requests.get(url, headers=headers)
+        if res.status_code != 429:
+            return res
+        # 429 = rate limited; x-ratelimit-reset says how many seconds until the window reopens
+        wait = int(float(res.headers.get('x-ratelimit-reset', RSS_MIN_WAIT_SECONDS))) + 2
+        print(f"Rate limited by Reddit (HTTP 429); waiting {wait}s...")
+        time.sleep(wait)
+    return res
+
 def fetch_reddit_posts(subreddit="estimators", limit=210):
-    """Scrapes public posts from Reddit using JSON endpoints, yielding one cleaned post at a time."""
+    """Scrapes public posts from Reddit's Atom search feed, yielding one cleaned post at a time."""
     headers = {'User-Agent': 'TakeMeter-Dataset-Scraper/1.0'}
     yielded = 0
-    after = None
-    seen_ids = set()  # Reddit fullnames (e.g. t3_abc123) already yielded; the guard against duplicate rows
-
+    seen_ids = set()  # Reddit fullnames (e.g. t3_abc123) already seen; the guard against duplicate rows
+    
     print(f"Fetching posts from r/{subreddit}...")
-    while yielded < limit:
-        # Fixed URL: needs www + "/r/" before the subreddit. raw_json=1 stops Reddit HTML-escaping (&amp; etc.)
-        # so the post text is stored exactly as the author wrote it.
-        url = f"https://www.reddit.com/r/{subreddit}/search.json?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t=all&restrict_sr=1&limit=100&raw_json=1"
-        if after:
-            url += f"&after={after}"
-
-        res = requests.get(url, headers=headers)
-        if res.status_code != 200:
-            print(f"STOPPED: Reddit returned HTTP {res.status_code}. Posts obtained before this: {yielded}.")
+    for window in RSS_TIME_WINDOWS:
+        after = None
+        while yielded < limit:
+            # Same exact query as before (self:true + keywords, sort=top, restrict to the subreddit); only t= varies.
+            url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t={window}&restrict_sr=1&limit=100"
+            if after:
+                url += f"&after={after}"
+            
+            res = _get_feed_page(url, headers)
+            if res.status_code != 200:
+                print(f"STOPPED: Reddit returned HTTP {res.status_code} (window t={window}). Posts obtained before this: {yielded}.")
+                return
+            
+            entries = ET.fromstring(res.content).findall('a:entry', RSS_NS)
+            if not entries:
+                break  # this window is exhausted; move on to the next (narrower) window
+            
+            new_on_page = 0
+            for entry in entries:
+                post_id = entry.find('a:id', RSS_NS).text  # fullname, e.g. t3_1qdjxpo; also the `after` cursor
+                after = post_id
+                if post_id in seen_ids:
+                    continue  # already emitted from an earlier page/window; never write a repeat
+                seen_ids.add(post_id)
+                new_on_page += 1
+                
+                title = entry.find('a:title', RSS_NS).text or ''
+                content_el = entry.find('a:content', RSS_NS)
+                selftext = _html_to_text(content_el.text) if content_el is not None and content_el.text else ''
+                if selftext in ('[removed]', '[deleted]'):
+                    continue  # body is gone, so there is no whole post to label
+                full_post = f"{title}\n\n{selftext}".strip()
+                
+                # Clean newlines and quotes for clean CSV handling
+                clean_text = full_post.replace('\r\n', ' ').replace('\n', ' ')
+                if len(clean_text) > 30: # Filter empty/short posts
+                    yielded += 1
+                    yield clean_text
+                    if yielded >= limit:
+                        return
+            
+            print(f"  t={window}: page done, {new_on_page} new posts (total so far {yielded}).")
+            if new_on_page == 0:
+                break  # page held only already-seen posts; paging further would only produce duplicates
+            time.sleep(RSS_MIN_WAIT_SECONDS) # Respect rate limits (anonymous feed allows ~1 request/minute)
+        if yielded >= limit:
             return
-
-        data = res.json()
-        children = data.get('data', {}).get('children', [])
-        if not children:
-            print(f"STOPPED: Reddit returned an empty page (no more search results). Posts obtained before this: {yielded}.")
-            return
-
-        new_on_page = 0
-        for child in children:
-            pdata = child['data']
-            post_id = pdata.get('name')
-            if post_id in seen_ids:
-                continue  # never emit a repeat; page-level duplicate handling is below
-            seen_ids.add(post_id)
-            new_on_page += 1
-
-            title = pdata.get('title', '')
-            selftext = pdata.get('selftext', '')  # search.json returns the FULL selftext for self posts (no truncation)
-            if selftext in ('[removed]', '[deleted]'):
-                continue  # body is gone, so there is no whole post to label
-            full_post = f"{title}\n\n{selftext}".strip()
-
-            # Clean newlines and quotes for clean CSV handling
-            clean_text = full_post.replace('\r\n', ' ').replace('\n', ' ')
-            if len(clean_text) > 30: # Filter empty/short posts
-                yielded += 1
-                yield clean_text
-                if yielded >= limit:
-                    return
-
-        after = data.get('data', {}).get('after')
-        # Pagination wall: Reddit repeating results (nothing new) or giving no next cursor means looping again would
-        # only re-fetch page 1 and create duplicate rows, so halt and report instead.
-        if new_on_page == 0:
-            print(f"STOPPED: Reddit pagination returned only already-seen posts (would create duplicates). Posts obtained before this: {yielded}.")
-            return
-        if not after:
-            print(f"STOPPED: Reddit gave no 'after' cursor, i.e. the end of the search results was reached. Posts obtained before this: {yielded}.")
-            return
-        time.sleep(1) # Respect rate limits
+        time.sleep(RSS_MIN_WAIT_SECONDS)  # also pause before opening the next window's first page
+    
+    print(f"STOPPED: All time windows {RSS_TIME_WINDOWS} are exhausted (no more unseen matching posts). Posts obtained before this: {yielded}.")
 
 def label_post_with_gemini(post_text):
     """Calls Gemini API to rank semantic labels. Returns (label, note) or None if every attempt failed."""
