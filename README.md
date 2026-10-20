@@ -434,22 +434,21 @@ Only one label reaches the 8-post mark in test, so every other label's F1 will s
 
      ⚠️ Plus disclosure of any pre-labelling. If you had a model pre-label a
      batch and then read and corrected every one, say that. It's an allowed
-     workflow and disclosing it costs you nothing. Not disclosing it is the
-     problem. -->
+     workflow and disclosing it costs you nothing. Not disclosing it is the problem. -->
 
-**Moment 1**
+**Moment 1: collecting the posts (Claude Code)**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* A scraper, `build_dataset.py`, that pulls 200 posts from r/estimators using the exact search `self:true (guide OR megathread OR analysis OR "deep dive")`, sorted Top / All Time, and writes them into `labels.csv`.
+- *What came back:* Reddit's `.json` endpoints now return HTTP 403 to anyone who isn't logged in, so the first version fetched nothing. Claude Code tested the alternatives and found that the same search still works as a public Atom feed (`search.rss`, no login), which returns each post's full text. It then measured the limits instead of guessing: the keyword query only matches about 105 posts in total, no matter the sort or time window, so 200 was impossible with that query alone.
+- *What I changed:* I added a Hot-sorted version of the keyword search and a third, broader `self:true` search (Top sort) to supply enough different posts. I set each search to collect 100 posts that are not already in `labels.csv`, kept new rows appending to the end of the file, and had the script remove repeated posts (keeping the first copy) before any labelling. Even so, only 204 unique posts were reachable, which is above the 150 floor but short of 200.
 
-**Moment 2**
+**Moment 2: labelling the posts (Gemini, called from my script)**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* For each post, one best-fit label out of my 21, with a runner-up and a 0-100 match score for each, in a fixed note format. The prompt gave Gemini the role "expert HVAC estimator for bids and takeoffs and expert in the MEP construction industry", my label definitions from the Label Taxonomy, and my two hardest-boundary decision rules.
+- *What came back:* A JSON answer per post that the script validated (it had to be one of the 21 labels, and the top two had to differ). The first run produced no labels at all because the model I had picked was retired for new users (HTTP 404), and the next model allowed only 20 requests per day on the free tier. Retries and a fallback label would have written invented labels into the data, so the script now skips and retries instead, and rotates through the other Gemini models my key can see. All 204 final labels came from `gemini-3.1-flash-lite`.
+- *What I changed:* I removed a hard-coded "pre-labelled, checked" note so every row carries Gemini's own ranked scores, made the script label only rows whose label is empty, and made it check that the text it sent still matches the row it writes to. I also removed the "cold" prefix from the code (the first 20 rows still carry it from an earlier run).
 
-**Pre-labelling disclosure:**
+**Pre-labelling disclosure:** Every one, except for the first 20, of the 204 labels and notes in `labels.csv` was produced by the Gemini API (`gemini-3.1-flash-lite`), not by me. The notes in column 3 are Gemini's own explanations of its top two picks. The first 20 rows are tagged `cold` as the project spec asks, to denote that those labels were not assigned by Gemini but were assigned by human opinion; Gemini did help with the "notes" explanation section of those 20 rows. The label quality and the boundary behavior in the 3 hard cases above are Gemini's judgement applied to my definitions.
 
 <!-- ═══════════════════════ UNIT 6 — THE TEST ═══════════════════════
 
