@@ -51,29 +51,29 @@ whether you hit them:
 
 ---
 
-Note that this `criteria.md` file covers five robust, domain-specific acceptance areas across this 20-class dataset (200 total examples, averaging ~10 examples per label). Each criterion specifies a clear metric and threshold, along with context-specific reasoning tailored to the taxonomy and dataset constraints of the TakeMeter LoRA classifier on `r/estimators`.
+Note that this `criteria.md` file covers 5 robust, domain-specific acceptance areas across this 21-label (category) dataset (204 total examples, averaging ~10 examples per label). Each criterion specifies a clear metric and threshold, along with context-specific reasoning tailored to the taxonomy and dataset constraints of the TakeMeter LoRA classifier on `r/estimators`.
 
 ---
 
 ## 1. Overall Classification Accuracy
 
-Across all three evaluation seeds, the overall test-set classification accuracy across all 20 categories must reach at least **0.65**.
+Across all three evaluation seeds, the overall test-set classification accuracy across all 21 labels (categories) must reach at least **0.65**.
 
-**Why this target:** Random guessing across 20 distinct categories yields an expected baseline accuracy of only 0.05 (5%). Achieving 0.65 proves that the LoRA adapter successfully learned high-level construction domain terminology (such as SMACNA standards, MCAA labor factors, and Div 23 scope boundaries) rather than making arbitrary predictions, while leaving a realistic error buffer for a small 200-post dataset distributed over 20 fine-grained categories.
+**Why this target:** Random guessing across 21 distinct labels (categories) yields an expected baseline accuracy of only about 0.048 (4.8%). Achieving 0.65 proves that the LoRA adapter successfully learned high-level construction domain terminology (such as SMACNA standards, MCAA labor factors, and Div 23 scope boundaries) rather than making arbitrary predictions, while leaving a realistic error buffer for a small 204-post dataset distributed over 21 fine-grained labels (categories).
 
 * **Reason it might turn out too easy:** High-frequency, easily recognizable categories like `general_pdf_cad_digitizers` (distinguished by obvious software names like Bluebeam or PlanSwift) or `industry_venting_operational_burnout` could dominate the sample distribution and drag the overall average up even if subtle technical trade classes struggle.
 * **Reason it might turn out too hard:** Semantic overlaps between adjacent categories—such as distinguishing `sub_trade_specialty_sheet_metal_vs_hydronics` from a comprehensive `division_23_full_mechanical_hvac` post—could cause widespread misclassifications across smaller categories, pulling overall accuracy below 0.65 across multiple seeds.
 
 ---
 
-## 2. Core Trade Category Minimum Performance
+## 2. Core Technical Label Minimum Performance
 
-For the core technical trade labels (`division_23_full_mechanical_hvac`, `sub_trade_specialty_sheet_metal_vs_hydronics`, and `mep_package_mechanical_plumbing_electrical`), the model must achieve an F1-score of at least **0.60** across all random seeds.
+Across all three evaluation seeds, the macro F1-score over the core technical estimating labels that have at least 10 posts in the full dataset (`general_construction_non_mechanical`, `software_benchmarking_technical_workflow`, `emerging_ai_automation_tools`, `bid_strategy_scope_gaps_gc_relations`, and `enterprise_erp_bidding_platforms`) must be at least **0.60** on every seed, with a standard deviation of less than **0.05** across the seeds. It is computed once per seed as a single number with a 95% bootstrap confidence interval (`python macro_f1_ci.py`).
 
-**Why this target:** These three categories define the primary technical boundaries of mechanical estimating where scope gaps create severe financial risks (e.g., missing who estimates motor starters or line voltage controls between Div 23 and Div 26). An F1 threshold of 0.60 guarantees that the classifier reliably isolates critical MEP scope discussions from noise before the predictions are surfaced to estimators.
+**Why this target:** An F1-score only means something when enough true posts stand behind it. With a handful of examples, one prediction decides everything: 3 correct, 1 false alarm and 1 miss gives an F1 of 0.75, yet flipping a single prediction turns it into a failure. My data has that problem: 204 posts and a test split of only about 31, so in the seed-42 split the biggest label has 8 test posts and the technical labels have 1 to 4. A support rule of 30 test posts per label (the usual floor for steady numbers) would judge nothing here, and computing 21 separate per-label F1s would produce 21 noisy numbers. So the criterion uses one summary instead: the average F1 over five labels fixed in advance, each having 10 to 23 posts in the whole dataset. They are the technical labels an estimator would act on: non-HVAC trades, estimating-software comparisons, AI takeoff tools, bid scope gaps and exclusions, and bidding platforms. A target of 0.60 sits far above random guessing across my 21 labels (about 0.048), and the standard deviation limit asks the seeds to agree, since a label that swings between 0.40 and 0.75 from one seed to the next has too little data to trust. The bootstrap interval shows how much of each seed's number is only luck in which posts landed in the test split. The three trade-scope labels first planned for this criterion (`division_23_full_mechanical_hvac`, `sub_trade_specialty_sheet_metal_vs_hydronics`, `mep_package_mechanical_plumbing_electrical`) have no posts at all in my data, and `industry_venting_operational_burnout` and `career_pathing_compensation_hiring` (the two big labels, 55 and 49 posts) are left out on purpose because they are not technical estimating topics.
 
-* **Reason it might turn out too easy:** Distinct trade keywords like `ductwork`, `chilled water`, `Div 22/23/26`, and `SMACNA` occur frequently in trade-specific posts, making it easy for the LoRA adapter's attention heads to map these explicit anchors to their corresponding label.
-* **Reason it might turn out too hard:** In real-world `r/estimators` threads, posters routinely discuss combined mechanical and electrical packages in the same post (e.g., asking about HVAC equipment hookups), leading to low precision if multi-trade posts blend trade boundaries.
+* **Reason it might turn out too easy:** With only 10 to 23 posts per label, the macro F1 can reach 0.60 on a lucky split without the model being any good: one seed could land mostly obvious posts (a Bluebeam or PlanSwift comparison, an "OCR / Togal.ai" takeoff post) in its test set. The standard deviation limit helps, but a low spread across three seeds is also easy to get from a model that predicts the same few labels every time. If a seed's bootstrap interval is wide enough to contain 0.60, that seed's "pass" is not a real pass.
+* **Reason it might turn out too hard:** These labels overlap with each other and with neighbouring ones. For example, a post comparing AI takeoff tools is both software benchmarking and emerging AI, and `enterprise_erp_bidding_platforms` is often the runner-up for posts about bid-management software. A seed's test split holds only about 1 to 4 posts of each of these labels, so one wrong prediction moves that label's F1 by a lot, and three seeds can differ by more than 0.05 purely by chance even when the model is steady.
 
 ---
 
@@ -106,7 +106,7 @@ When the model outputs a prediction confidence probability $\ge 0.80$, its preci
 **Why this target:** Mechanical estimators using TakeMeter to sort bid opportunities need to trust high-confidence model tags without double-checking every post. Requiring 85% precision on high-confidence predictions ensures that when the model expresses high certainty, its output is trustworthy enough to automate post tagging in preconstruction workflows.
 
 * **Reason it might turn out too easy:** The model may naturally reserve probabilities above 0.80 for obvious, single-topic posts containing explicit brand names or clear keywords (e.g., `Trimble AutoBid` or `Davis-Bacon`), where classification is nearly unambiguous.
-* **Reason it might turn out too hard:** Small-scale LoRA fine-tuning on a 200-example dataset can lead to overconfidence (calibration drift), where the softmax layer outputs high probabilities ($\ge 0.80$) even on misclassified edge cases.
+* **Reason it might turn out too hard:** Small-scale LoRA fine-tuning on a 204-example dataset can lead to overconfidence (calibration drift), where the softmax layer outputs high probabilities ($\ge 0.80$) even on misclassified edge cases.
 
 ---
 

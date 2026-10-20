@@ -424,6 +424,12 @@ These are the three posts where Gemini's top two scores were closest (a 5-point 
 
 Only one label reaches the 8-post mark in test, so every other label's F1 will swing a lot between seeds, and 10 labels cannot be measured at all on this split. That will explain much of next unit's variance.
 
+**How Criterion 2 is measured, and why it has a bootstrap confidence interval:** With a test split of about 31 posts, a per-label F1 is mostly luck, and 21 separate ones would be 21 untrustworthy numbers. So `criteria.md` Criterion 2 asks for one number per seed: the macro F1 (the average of the per-label F1 scores) over five core technical estimating labels that each have at least 10 posts in the whole dataset, which must reach 0.60 on every seed with a standard deviation under 0.05 across the seeds. `macro_f1_ci.py` computes it from the confusion matrix that the notebook already saves in its results file, so nothing needs retraining.
+
+The script also attaches a 95% bootstrap confidence interval to each seed's number. It takes the test posts, resamples them with replacement 2,000 times at the same size, recomputes the macro F1 on every resample, and keeps the middle 95% of those values. Its value is that it shows how much of the number is only the luck of which 31 posts ended up in the test split. If the interval contains 0.60, that seed can't honestly be called a pass or a fail; if it sits clearly above or below 0.60, the verdict is real. It does not capture the randomness of training itself, which is what the three seeds are for, and with this little data the intervals will be wide. That width is itself a finding about the dataset.
+
+One disclosure about timing: Criterion 2 was reworded (which labels it covers and how it is computed) after the first single-seed training run had been executed, when its overall accuracy was already visible. The 0.60 target and the 0.05 spread limit were not changed, the five labels were chosen from their post counts in the dataset, not from any per-label score, and no three-seed run existed yet.
+
 
 
 ---
