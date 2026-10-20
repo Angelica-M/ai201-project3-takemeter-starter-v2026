@@ -399,15 +399,30 @@ These are the three posts where Gemini's top two scores were closest (a 5-point 
 
 <!-- Your starting model, your settings, and anything you changed and why. -->
 
-**Base model:**
+**Base model:** `distilbert-base-uncased`, fine-tuned for 21-way text classification (the 21 labels in the Label Taxonomy).
 
-**Settings:** <!-- epochs, learning rate, batch size, seed -->
+**Settings:** 3 epochs, learning rate 2e-5, batch size 16, 128 tokens per post, seed 42. **Trained on: `cpu`** (device name "CPU", torch 2.14.1+cpu, Windows 11 machine, no GPU). The device is also recorded in `results.json`, because different hardware can give slightly different numbers for the same seed.
 
-**Anything I changed from the defaults, and why:**
+**Anything I changed from the defaults, and why:** The training settings are all the notebook's defaults. The only edits to `takemeter.ipynb` were setup: my name and email, `LABELS` set to my 21 labels, and `CSV` pointed at `data/labels.csv` (where `build_dataset.py` writes my data) instead of `labels.csv` in the repo root. The notebook's code cells were run from a script with the project's `.venv` Python rather than inside the VS Code notebook window.
 
-**Split sizes:** <!-- train / val / test, and per-label counts in the test
-split. If a label had fewer than about 8 in test, say so — it explains a lot
-of next unit's variance. -->
+**Split sizes:** 204 posts split 142 train / 31 validation / 31 test. The notebook could not stratify the split, because several labels have only one post, so it fell back to a plain random split (that is a warning about the dataset, not the split). Test split per label:
+
+| Label | Test posts |
+|---|---|
+| `industry_venting_operational_burnout` | 8 |
+| `career_pathing_compensation_hiring` | 7 |
+| `general_construction_non_mechanical` | 4 |
+| `emerging_ai_automation_tools` | 2 |
+| `public_works_prevailing_wage_bidding` | 2 |
+| `bid_strategy_scope_gaps_gc_relations` | 2 |
+| `general_contractor_precon_coordinator` | 2 |
+| `enterprise_erp_bidding_platforms` | 1 |
+| `software_benchmarking_technical_workflow` | 1 |
+| `commercial_institutional_industrial` | 1 |
+| `software_vendor_sales_representative` | 1 |
+| All other 10 labels (including the 5 with no posts at all) | 0 |
+
+Only one label reaches the 8-post mark in test, so every other label's F1 will swing a lot between seeds, and 10 labels cannot be measured at all on this split. That will explain much of next unit's variance.
 
 
 
