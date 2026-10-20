@@ -432,6 +432,24 @@ def append_rows(new_rows):
             writer.writerow(["text", "label", "note"])
         writer.writerows(new_rows)
 
+def remove_duplicate_rows(rows):
+    """Step between scraping and labelling: if several rows share the same column 1, keep the FIRST one and delete the later
+    repeats. Rewrites labels.csv only when something was actually removed. Returns the de-duplicated rows (the header row
+    is never part of `rows`, so it is never touched or sent to Gemini)."""
+    seen = set()
+    kept = []
+    for row in rows:
+        key = _normalize(row[0])  # same whitespace-insensitive key the scraper uses
+        if key in seen:
+            continue
+        seen.add(key)
+        kept.append(row)
+    removed = len(rows) - len(kept)
+    if removed:
+        write_rows(kept)
+    print(f"Duplicate check: removed {removed} repeated row(s) (first appearance kept); {len(kept)} unique rows remain.")
+    return kept
+
 def main():
     # Two-phase design (replaces the old interleaved fetch+label loop):
     #   Phase 1 - scrape ALL posts first (the slow, rate-limited Reddit part) and save them in column 1 with empty label/note.
@@ -439,12 +457,13 @@ def main():
     # Why: Reddit is slow (~60s/request) and Gemini is the flaky part (quotas). Splitting them means a Gemini outage
     # never costs a re-scrape: the posts are already on disk and the next run resumes at the first unlabelled row.
     # Append-only behaviour: an existing labels.csv is never replaced. Its rows stay as they are and newly scraped posts
-    # are added after the last one (a missing/empty file is simply created). Duplicates across runs are allowed on purpose
-    # (they can be removed later); only a run that was interrupted mid-labelling resumes instead of scraping again.
+    # are added after the last one (a missing/empty file is simply created). Duplicates are allowed to enter the file while
+    # scraping; they are removed in one pass right after scraping (see remove_duplicate_rows), keeping the first appearance.
+    # Only a run that was interrupted mid-labelling (rows still missing a label) resumes instead of scraping again.
     rows = read_rows()
-    # "Unlabelled" is judged by column 3 (the note): a row whose note is empty still needs Gemini, a filled one never does.
-    if rows and any(not r[2].strip() for r in rows):
-        print(f"Resuming: {len(rows)} posts already in {OUTPUT_CSV}, {sum(1 for r in rows if not r[2].strip())} still unlabelled. Skipping Reddit scrape.")
+    # "Unlabelled" is judged by column 2 (the label): a row whose label is empty still needs Gemini, a filled one never does.
+    if rows and any(not r[1].strip() for r in rows):
+        print(f"Resuming: {len(rows)} posts already in {OUTPUT_CSV}, {sum(1 for r in rows if not r[1].strip())} still unlabelled. Skipping Reddit scrape.")
     else:
         print(f"Phase 1: scraping posts from Reddit... ({len(rows)} rows already in {OUTPUT_CSV} will be kept; new rows go after them)")
         # Phase 1 loop: the generator already skips posts found in column 1, and each new post is appended to the file the
@@ -455,10 +474,13 @@ def main():
             append_rows([new_row])
             rows.append(new_row)
             added += 1
-        if not added:
-            print("No new unique posts were found, so nothing was added.")
-            return
         print(f"Phase 1 done: appended {added} new unique posts to column 1 of {OUTPUT_CSV} (file now has {len(rows)} rows).")
+
+    # Scraping is finished: make sure every column-1 value in the file is unique BEFORE anything is sent to Gemini.
+    if not rows:
+        print("labels.csv has no posts, nothing to do.")
+        return
+    rows = remove_duplicate_rows(rows)
 
     print("Phase 2: labelling posts with Gemini, one by one...")
     try:
@@ -473,43 +495,43 @@ def main():
         if idx >= len(rows):
             break  # the file got shorter during the run
         row = rows[idx]
-        # CHECK 1 (before sending): only rows whose third column (note) is empty go to Gemini. A filled note means the
+        # CHECK 1 (before sending): only rows whose second column (label) is empty go to Gemini. A filled label means the
         # row was already labelled, so it is skipped (saves quota and never overwrites an existing label/note).
-        if row[2].strip():
+        if row[1].strip():
             continue
         sent_text = row[0]  # exactly what is sent to Gemini; compared against the file again before writing
         try:
             result = label_post_with_gemini(sent_text, pool)
         except AllModelsExhausted as e:
-            print(f"\nSTOPPED: {e}\nRows labelled so far: {sum(1 for r in rows if r[2].strip())}/{len(rows)}.")
+            print(f"\nSTOPPED: {e}\nRows labelled so far: {sum(1 for r in rows if r[1].strip())}/{len(rows)}.")
             return
         if result is None:
             skipped += 1
             print(f"Skipped post {idx + 1}: Gemini returned unusable output {GEMINI_MAX_ATTEMPTS} times (left unlabelled).")
             continue
-        label, note, model_name = result  # (the "cold | " note prefix for the first 20 rows was removed as no longer needed)
+        label, note, model_name = result  # columns 2 and 3 of this row
 
         # CHECK 2 (before writing): re-read the file as it is on disk NOW and confirm that row idx still holds the very
-        # text we sent to Gemini and still has an empty note. Gemini calls take seconds and the CSV can change meanwhile
-        # (rows edited/inserted/removed by hand, another run), so this guarantees the note lands on the row it belongs to.
+        # text we sent to Gemini and still has an empty label. Gemini calls take seconds and the CSV can change meanwhile
+        # (rows edited/inserted/removed by hand, another run), so this guarantees the label/note land on the row they belong to.
         # Writing starts from the on-disk rows (not our stale in-memory copy) so any outside edits are preserved.
         disk_rows = read_rows()
         if idx >= len(disk_rows) or disk_rows[idx][0] != sent_text:
             skipped += 1
             print(f"Skipped writing row {idx + 1}: column 1 in {OUTPUT_CSV} no longer matches the post sent to Gemini (file changed during the run). Nothing written.")
             continue
-        if disk_rows[idx][2].strip():
-            print(f"Skipped writing row {idx + 1}: its note was filled in while Gemini was working. Existing note kept.")
+        if disk_rows[idx][1].strip():
+            print(f"Skipped writing row {idx + 1}: its label was filled in while Gemini was working. Existing label kept.")
             continue
 
         disk_rows[idx] = [sent_text, label, note]
         write_rows(disk_rows)  # save after EVERY row (crash safety)
         rows = disk_rows  # keep the in-memory view in sync with the file for the next iterations
-        labelled = sum(1 for r in rows if r[2].strip())
+        labelled = sum(1 for r in rows if r[1].strip())
         print(f"Labelled {labelled}/{len(rows)} (row {idx + 1}, model {model_name}): {label}")
         time.sleep(GEMINI_DELAY_SECONDS)
 
-    print(f"Done. {sum(1 for r in rows if r[2].strip())}/{len(rows)} rows labelled in {OUTPUT_CSV} ({skipped} skipped). Rows per model: {pool.uses}")
+    print(f"Done. {sum(1 for r in rows if r[1].strip())}/{len(rows)} rows labelled in {OUTPUT_CSV} ({skipped} skipped). Rows per model: {pool.uses}")
 
 if __name__ == "__main__":
     main()
