@@ -1,0 +1,16 @@
+Here is how Reddit splits its sorting options between those that prioritize time (freshness) and those that prioritize quality (engagement and popularity).
+
+🕒 Sort Options that Factor in Time (Reward Newest)
+
+These filters prioritize how recently a post was submitted or how quickly it is gaining traction.
+• New: This is the ultimate time-based filter. It rewards the newest posts strictly in chronological order, completely ignoring upvotes or quality.
+• Rising: This rewards new posts (usually less than an hour old) that are gaining early momentum. It factors in time by looking only at very recent submissions.
+• Hot: While it measures popularity, it heavily penalizes age. It rewards posts with high recent upvote velocity, meaning a brand-new post with fast traction will easily beat an older, higher-quality post.
+
+🏆 Sort Options that Factor in Quality (Reward Depth & Importance)
+
+These filters prioritize total community engagement, voting scores, and overall importance, letting older content remain at the top if it is highly valued.
+• Top: This rewards pure metric success (highest net score of upvotes minus downvotes). It ignores time entirely unless you manually restrict it to a specific window (like "Top of the Year").
+• Best: This factors in quality by looking at high upvote ratios and positive engagement, while also tailoring the "quality" definition to your personal subreddit preferences.
+• Controversial (Bonus): Note: This option is primarily available when sorting comments or via specific search layouts. It rewards depth of engagement by finding posts or comments with a high volume of both upvotes and downvotes, indicating intense debate or mixed community reaction.
+

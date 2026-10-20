@@ -187,8 +187,10 @@ def fetch_reddit_posts(subreddit="estimators", limit=210):
     for window in RSS_TIME_WINDOWS:
         after = None
         while yielded < limit:
+            # How to use "Top" (Most total upvote) Reddit sort: url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t={window}&restrict_sr=1&limit=100"
+            # How to use "Hot" (Fastest recent traction) Reddit sort: url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=hot&t={window}&restrict_sr=1&limit=100"
             # Same exact query as before (self:true + keywords, sort=top, restrict to the subreddit); only t= varies.
-            url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t={window}&restrict_sr=1&limit=100"
+            url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=hot&t={window}&restrict_sr=1&limit=100"
             if after:
                 url += f"&after={after}"
             
@@ -362,26 +364,44 @@ def write_rows(rows):
         writer.writerows(rows)
     os.replace(tmp_path, OUTPUT_CSV)
 
+def append_rows(new_rows):
+    """Adds rows at the END of labels.csv without touching what is already there; creates the file (with header) if it
+    does not exist or is empty. This is how a second run extends an existing dataset instead of overwriting it."""
+    needs_header = not os.path.exists(OUTPUT_CSV) or os.path.getsize(OUTPUT_CSV) == 0
+    if not needs_header:
+        with open(OUTPUT_CSV, "rb") as f:  # make sure the last existing line is terminated so our first row starts on its own line
+            f.seek(-1, os.SEEK_END)
+            last_byte = f.read(1)
+        if last_byte not in (b"\n", b"\r"):
+            with open(OUTPUT_CSV, "ab") as f:
+                f.write(b"\r\n")
+    with open(OUTPUT_CSV, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if needs_header:
+            writer.writerow(["text", "label", "note"])
+        writer.writerows(new_rows)
+
 def main():
     # Two-phase design (replaces the old interleaved fetch+label loop):
     #   Phase 1 - scrape ALL posts first (the slow, rate-limited Reddit part) and save them in column 1 with empty label/note.
     #   Phase 2 - label them one by one, saving the file after every row.
     # Why: Reddit is slow (~60s/request) and Gemini is the flaky part (quotas). Splitting them means a Gemini outage
     # never costs a re-scrape: the posts are already on disk and the next run resumes at the first unlabelled row.
+    # Append-only behaviour: an existing labels.csv is never replaced. Its rows stay as they are and newly scraped posts
+    # are added after the last one (a missing/empty file is simply created). Duplicates across runs are allowed on purpose
+    # (they can be removed later); only a run that was interrupted mid-labelling resumes instead of scraping again.
     rows = read_rows()
     if rows and any(not r[1] for r in rows):
         print(f"Resuming: {len(rows)} posts already in {OUTPUT_CSV}, {sum(1 for r in rows if not r[1])} still unlabelled. Skipping Reddit scrape.")
-    elif rows:
-        print(f"{OUTPUT_CSV} already has all {len(rows)} rows labelled. Delete it to scrape and label again.")
-        return
     else:
-        print("Phase 1: scraping posts from Reddit...")
-        posts = list(fetch_reddit_posts(limit=200))
-        rows = [[post, "", ""] for post in posts]
-        write_rows(rows)
-        print(f"Phase 1 done: saved {len(rows)} posts to column 1 of {OUTPUT_CSV}.")
-        if not rows:
+        print(f"Phase 1: scraping posts from Reddit... ({len(rows)} rows already in {OUTPUT_CSV} will be kept; new rows go after them)")
+        new_rows = [[post, "", ""] for post in fetch_reddit_posts(limit=200)]
+        if not new_rows:
+            print("No posts were scraped, so nothing was added.")
             return
+        append_rows(new_rows)
+        rows += new_rows
+        print(f"Phase 1 done: appended {len(new_rows)} posts to column 1 of {OUTPUT_CSV} (file now has {len(rows)} rows).")
 
     print("Phase 2: labelling posts with Gemini, one by one...")
     try:
