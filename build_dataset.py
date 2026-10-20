@@ -22,6 +22,9 @@ genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 UNIQUE_POSTS_PER_SEARCH = 100
 # Output file: the existing labels.csv the notebook reads (data/labels.csv), not a new file in the cwd.
 OUTPUT_CSV = os.path.join("data", "labels.csv")
+# The header line. It is written exactly once, as line 1, when labels.csv is created (or when the file is rewritten); the
+# Reddit searches never write a header of their own. Kept as "note" to match labels_template.csv and the notebook.
+CSV_HEADER = ["text", "label", "note"]
 # Models to try, in order; filtered to those the API key can actually see. Lite models first: they accepted requests
 # when probed and have the roomiest free-tier daily quota. See ModelPool for how rotation works.
 GEMINI_MODEL_PREFERENCE = [
@@ -411,7 +414,7 @@ def write_rows(rows):
     tmp_path = OUTPUT_CSV + ".tmp"
     with open(tmp_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["text", "label", "note"])
+        writer.writerow(CSV_HEADER)
         writer.writerows(rows)
     os.replace(tmp_path, OUTPUT_CSV)
 
@@ -429,7 +432,7 @@ def append_rows(new_rows):
     with open(OUTPUT_CSV, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         if needs_header:
-            writer.writerow(["text", "label", "note"])
+            writer.writerow(CSV_HEADER)
         writer.writerows(new_rows)
 
 def remove_duplicate_rows(rows):
