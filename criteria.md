@@ -110,6 +110,22 @@ When the model outputs a prediction confidence probability $\ge 0.80$, its preci
 
 ---
 
+## How each criterion is checked
+
+Run these in unit 6, after the notebook's section 6 has written `results_three_seeds_before.json` (and again on `results_three_seeds_after.json` after the improvement). Only criteria that cannot be read straight off a results file have a script.
+
+| # | Criterion | How to check it | Script? |
+|---|---|---|---|
+| 1 | Overall accuracy >= 0.65 on every seed | Notebook section 6 prints the "Overall accuracy" row of the spread table. Or: `python -c "import json;print([round(r['accuracy'],3) for r in json.load(open('results_three_seeds_before.json'))])"` | No: one number per seed is already in the results file |
+| 2 | Macro F1 over the five core technical labels >= 0.60 on every seed, standard deviation < 0.05 | `python macro_f1_ci.py` (prints one macro F1 per seed with a 95% bootstrap interval, the mean, the spread and a verdict) | **Yes, `macro_f1_ci.py`**: averaging over a chosen label subset and bootstrapping is too fiddly by hand |
+| 3 | Precision of `general_construction_non_mechanical` >= 0.75 on every seed | `python -c "import json;print([round(r['per_label']['general_construction_non_mechanical']['precision'],3) for r in json.load(open('results_three_seeds_before.json'))])"`. A precision of 0.000 with support 0 means the label was never predicted, which is a finding, not a pass | No: the notebook already stores each label's precision |
+| 4 | Cohen's kappa >= 0.70 on the 30 staff posts | `python agreement.py`, then `python kappa.py` (prints kappa with a 95% bootstrap interval and a verdict) | **Yes, `kappa.py`**: `agreement.py` only reports the raw agreement rate, and kappa needs the full list of label pairs |
+| 5 | Precision >= 0.85 on predictions with confidence >= 0.80 on every seed | `python -c "import json;print([(r['high_confidence']['n_predictions'], r['high_confidence']['precision']) for r in json.load(open('results_three_seeds_before.json'))])"` prints (how many confident predictions, how many were right) per seed | No: the notebook's `evaluate()` now saves a `high_confidence` block in every results file. If `n_predictions` is 0 the seed cannot be judged, and with a small `n_predictions` the precision is noisy, so quote both |
+
+Note for Criterion 5: `results.json` from the first single run (written before this block existed) does not have a `high_confidence` entry. Every three-seed file from section 6 does.
+
+---
+
 <!-- ─────────────────────────────────────────────────────────────────────────
      UNIT 6 — read this before you change anything above.
 
