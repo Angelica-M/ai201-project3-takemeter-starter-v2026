@@ -38,8 +38,7 @@
 <!-- ═══════════════════════ UNIT 5 — THE BUILD ═══════════════════════ -->
 
 ## What This Does
-<!-- Your community, and what your classifier sorts posts into. Three or four
-     sentences. -->
+<!-- Your community, and what your classifier sorts posts into. 3-4 sentences. -->
 
 ## What This Does: Your community, and what your classifier sorts posts into.
 
@@ -324,48 +323,75 @@ If a post discusses preconstruction workflows, takeoff measurements, bluebeam ma
 
 ## The Dataset
 
-<!-- Where you collected from, how you labelled, your counts, and three hard
-     cases. -->
+<!-- Where you collected from, how you labelled, your counts, and 3 hard cases. -->
 
 **Where the posts came from:**
+All 204 posts are text (self) posts from **r/estimators**, collected in October 2026 by `build_dataset.py` through Reddit's public Atom search feeds (`search.rss`, no login). Three searches were run, each asked for 100 posts not already in `labels.csv`:
+1. Top (All Time): `self:true (guide OR megathread OR analysis OR "deep dive")`
+2. Hot: the same keyword query
+3. Top (All Time): `self:true` alone, to supply posts the keyword searches could not (those two together only contain about 105 posts)
 
-**How I labelled them:** <!-- Cold first? Pre-labelled with AI and corrected?
-Say so plainly — the disclosure is required, not penalised. -->
+281 rows were collected in total; 77 repeated posts (identical column 1) were then removed, keeping the first copy of each, which leaves **204 unique posts**. Each post is its title plus its full body text.
+
+**How I labelled them:**
+Every label and note was produced by the Gemini API (`gemini-3.1-flash-lite`), not by hand. For each post the script sent the full text, the role "expert HVAC estimator / MEP construction expert", the 21 label definitions from the Label Taxonomy above and the two hardest-boundary decision rules, and asked for the single best-fit label plus a runner-up, each with a 0-100 match score and a one-sentence reason. Column 3 stores that ranking in the form "Highest semantic match of X% for [label] (with 2nd highest of Y% as [label]) due to [reason]". The first 20 rows carry a `cold` tag at the start of their note, as the project spec asks; those labels were also assigned by Gemini. This section does not claim a manual re-check of the labels.
 
 **Counts per label:**
 
 | Label | Count | Share |
 |---|---|---|
-|  |  |  |
-|  |  |  |
-|  |  |  |
-| **Total** |  | 100% |
+| `division_23_full_mechanical_hvac` | 0 | 0.00% |
+| `sub_trade_specialty_sheet_metal_vs_hydronics` | 0 | 0.00% |
+| `mep_package_mechanical_plumbing_electrical` | 0 | 0.00% |
+| `general_construction_non_mechanical` | 23 | 11.28% |
+| `general_pdf_cad_digitizers` | 5 | 2.451% |
+| `specialized_mechanical_estimating_databases` | 1 | 0.49% |
+| `enterprise_erp_bidding_platforms` | 10 | 4.90% |
+| `emerging_ai_automation_tools` | 16 | 7.84% |
+| `commercial_institutional_industrial` | 1 | 0.49% |
+| `multi_family_residential_tract_housing` | 1 | 0.49% |
+| `service_replacement_retrofit_bidding` | 0 | 0.00% |
+| `public_works_prevailing_wage_bidding` | 2 | 0.98% |
+| `software_benchmarking_technical_workflow` | 16 | 7.84% |
+| `bid_strategy_scope_gaps_gc_relations` | 12 | 5.88% |
+| `career_pathing_compensation_hiring` | 49 | 24.02% |
+| `industry_venting_operational_burnout` | 55 | 26.96% |
+| `senior_b2b_mechanical_estimator_chief_estimator` | 1 | 0.49% |
+| `general_contractor_precon_coordinator` | 8 | 3.92% |
+| `field_tech_residential_installer_apprentice` | 0 | 0.00% |
+| `software_vendor_sales_representative` | 1 | 0.49% |
+| `unrelated` | 3 | 1.47% |
+| **Total** | **204** | 100% |
+
+Five labels have no posts at all (`division_23_full_mechanical_hvac`, `sub_trade_specialty_sheet_metal_vs_hydronics`, `mep_package_mechanical_plumbing_electrical`, `service_replacement_retrofit_bidding`, `field_tech_residential_installer_apprentice`), and the two largest labels hold 51% of the data together. The guide / analysis style of search pulls in long discussion posts, which skew towards career and venting topics.
 
 **Three hard cases**
 
-<!-- Any post that made you pause: what it was, which two labels it could have
-     been, and what you chose. These are worth more than the easy 190. -->
+<!-- Any post that made you pause: what it was, which 2 labels it could have been, and 
+     what you chose. These are worth more than the easy 190. -->
+
+These are the three posts where Gemini's top two scores were closest (a 5-point gap each; the next closest gap in the dataset is 7 points). Post text is shortened with "…"; the full text is in `data/labels.csv`.
 
 **1.**
-> *The post:*
+> *The post:* "New Siding Estimator Wanting Mentor — Hey everyone, I had to join a cat subreddit to get enough karma to post. I am 4 months in with a skins company that brought me in to start bidding siding on Multifamily, comm, mixed…bigger projects. I had no estimating experience. …" (about 3,900 characters)
 >
-> *Could have been:*
+> *Could have been:* `career_pathing_compensation_hiring` (90%) or `general_construction_non_mechanical` (85%)
 >
-> *I chose, because:*
+> *Labelled (by Gemini) as `career_pathing_compensation_hiring`, because:* the post is mainly a request for career mentorship from a newcomer to estimating, even though the trade it discusses (siding and exterior wall systems) is non-mechanical.
 
 **2.**
-> *The post:*
+> *The post:* "Better sub-network vs existing (Bluebook, Procore, Planhub) — Hey all, Some of you probably know me as the author of a few AI applications in precon posts … I'm working to build a better subcontractor network for the industry. Think of it as an updated Bluebook (better data, more vetted profiles, GCs kno…" (about 2,000 characters)
 >
-> *Could have been:*
+> *Could have been:* `enterprise_erp_bidding_platforms` (90%) or `general_contractor_precon_coordinator` (85%)
 >
-> *I chose, because:*
+> *Labelled (by Gemini) as `enterprise_erp_bidding_platforms`, because:* the post is mostly about improving bidding platforms and subcontractor networks (enterprise-level tools), although it is written from the GC precon coordinator's point of view.
 
 **3.**
-> *The post:*
+> *The post:* "Downtobid app review from a GC estimator — What is Downtobid? In their own language, Downtobid is an AI construction bidding platform for GCs and subs. It's supposed to: Streamline bid invites / ITBs and deadlines. Analyze your drawings and plans, identify scopes, draft invite emails … " (about 10,200 characters)
 >
-> *Could have been:*
+> *Could have been:* `enterprise_erp_bidding_platforms` (95%) or `software_benchmarking_technical_workflow` (90%)
 >
-> *I chose, because:*
+> *Labelled (by Gemini) as `enterprise_erp_bidding_platforms`, because:* it is a detailed technical review, but what it evaluates is a bidding / ITB management platform, which falls squarely under the enterprise bidding category.
 
 ---
 
