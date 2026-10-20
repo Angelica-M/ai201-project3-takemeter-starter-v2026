@@ -18,6 +18,8 @@ load_dotenv(override=True)  # override: a stale GEMINI_API_KEY in the OS environ
 # Ensure GEMINI_API_KEY is set in your environment variables
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
+# MACRO (tune by hand): how many NEW unique posts (not already in labels.csv) each of the 3 Reddit searches must collect.
+UNIQUE_POSTS_PER_SEARCH = 100
 # Output file: the existing labels.csv the notebook reads (data/labels.csv), not a new file in the cwd.
 OUTPUT_CSV = os.path.join("data", "labels.csv")
 # Models to try, in order; filtered to those the API key can actually see. Lite models first: they accepted requests
@@ -130,17 +132,36 @@ Provide your output ONLY as a JSON object matching this structure:
 # industry discussions you are looking for. Because r/Estimators is a highly specialized, fast-growing professional community, sorting
 # by Top (All Time) inside that specific sandbox will naturally front-load the absolute highest quality, most heavily engaged professional
 # insights from the last 1 to 3 years anyway, successfully completing your search in a single action.
-# Design: this is now a GENERATOR. It yields one post at a time so main() can label and write each row before the next
-# post is processed (row-by-row), and it halts itself (with a printed reason) instead of ever returning duplicates.
-# Transport change: Reddit now answers anonymous .json requests with HTTP 403 / a login redirect, but still serves the
-# same search as an Atom feed (search.rss) with no login. Atom <content> holds the FULL post body as HTML (tested up to
-# ~12k chars, no truncation), so we parse that instead.
-# Depth change: a single "Top / All Time" search only surfaced 104 matching posts. To reach more without changing the
-# query, the same query is re-run over narrower windows (t=year, month, week, day) and merged; seen_ids de-duplicates
-# across windows so a post that matches several windows is written once.
+# ---------------------------------------------------------------------------------------------------------------------
+# HOW THE SCRAPER WORKS (high level)
+#   * Reddit blocks anonymous .json requests (HTTP 403 / login redirect) but still serves every search as an Atom feed
+#     (search.rss) with no login or key. Each <entry> holds the FULL post body as HTML (tested up to ~12k chars, no
+#     truncation), so we parse that.
+#   * Three searches run in order (see SEARCHES below). The keyword searches alone only contain ~105 posts in total, so
+#     the third, broader "self:true" search (every text post, sorted Top) supplies the rest.
+#   * Each search keeps going until it has found UNIQUE_POSTS_PER_SEARCH posts that are NEW, i.e. whose text is not already
+#     in column 1 of labels.csv and was not added by an earlier search in this run. Posts that are already there are passed
+#     over and do not count towards the quota. If a search runs out of results first, it stops with a printed reason.
+#   * Every new post is appended to labels.csv (column 1, empty label/note) the moment it is found, so a crash loses nothing.
+#   * Only after ALL scraping is finished does Phase 2 start sending the unlabelled rows to Gemini one by one.
+# ---------------------------------------------------------------------------------------------------------------------
 RSS_NS = {'a': 'http://www.w3.org/2005/Atom'}
-RSS_TIME_WINDOWS = ["all", "year", "month", "week", "day"]  # widest first so the Top/All Time posts keep priority
+# Only "all" (All Time) is searched: tests showed the narrower windows (year/month/week/day) never returned a post that
+# t=all had not, and every extra window costs a rate-limited request. Add "year" etc. back here to widen a search.
+RSS_TIME_WINDOWS = ["all"]
 RSS_MIN_WAIT_SECONDS = 60  # anonymous RSS allows ~1 request per window (x-ratelimit-remaining was always 0)
+RSS_PAGE_SIZE = 100        # `limit=100` in the URL: the most entries Reddit returns per page; a shorter page means "last page"
+
+# (label for the log, search query, sort). The query text is already URL-encoded.
+SEARCHES = [
+    # How to use "Top" (Most total upvote) Reddit sort: url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t={window}&restrict_sr=1&limit=100"
+    ("Top, text posts matching guide/megathread/analysis/deep dive", "self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)", "top"),
+    # How to use "Hot" (Fastest recent traction) Reddit sort: url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=hot&t={window}&restrict_sr=1&limit=100"
+    ("Hot, text posts matching guide/megathread/analysis/deep dive", "self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)", "hot"),
+    # Third search: every text (self) post in the subreddit, Top sort. This is what supplies enough unique posts.
+    # (Reddit's search feed only returns posts: adding type=comment returned the identical post list, so comments are not available.)
+    ("Top, all text posts (self:true)", "self:true", "top"),
+]
 
 class _TextExtractor(HTMLParser):
     """Turns the feed's HTML post body into plain text (block tags become spaces, entities are decoded)."""
@@ -164,10 +185,18 @@ def _html_to_text(content_html):
     extractor.feed(body)
     return ' '.join(''.join(extractor.parts).split())  # collapse all whitespace/newlines to single spaces
 
+_last_request_at = 0.0  # time of the previous Reddit request, used to enforce RSS_MIN_WAIT_SECONDS between requests
+
 def _get_feed_page(url, headers):
-    """GET one feed page, honoring Reddit's rate limit. Returns (response or None). Retries 429s a few times."""
+    """GET one feed page, honoring Reddit's rate limit. Spaces requests >= RSS_MIN_WAIT_SECONDS apart (so callers never
+    need their own sleeps) and retries 429s a few times. Returns the last response."""
+    global _last_request_at
     for _ in range(4):
+        wait_more = RSS_MIN_WAIT_SECONDS - (time.time() - _last_request_at)
+        if wait_more > 0:
+            time.sleep(wait_more)
         res = requests.get(url, headers=headers)
+        _last_request_at = time.time()
         if res.status_code != 429:
             return res
         # 429 = rate limited; x-ratelimit-reset says how many seconds until the window reopens
@@ -176,65 +205,88 @@ def _get_feed_page(url, headers):
         time.sleep(wait)
     return res
 
-def fetch_reddit_posts(subreddit="estimators", limit=210):
-    """Scrapes public posts from Reddit's Atom search feed, yielding one cleaned post at a time."""
+def _normalize(text):
+    return " ".join(text.split())  # whitespace-insensitive key so "same post, different spacing" still counts as a duplicate
+
+def fetch_reddit_posts(existing_texts, subreddit="estimators"):
+    """Runs every search in SEARCHES and yields NEW post texts one at a time (generator), so main() can write each one to
+    labels.csv immediately. `existing_texts` = column 1 of the current labels.csv; anything already there is skipped."""
     headers = {'User-Agent': 'TakeMeter-Dataset-Scraper/1.0'}
-    yielded = 0
-    seen_ids = set()  # Reddit fullnames (e.g. t3_abc123) already seen; the guard against duplicate rows
-    
-    print(f"Fetching posts from r/{subreddit}...")
-    for window in RSS_TIME_WINDOWS:
-        after = None
-        while yielded < limit:
-            # How to use "Top" (Most total upvote) Reddit sort: url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=top&t={window}&restrict_sr=1&limit=100"
-            # How to use "Hot" (Fastest recent traction) Reddit sort: url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=hot&t={window}&restrict_sr=1&limit=100"
-            # Same exact query as before (self:true + keywords, sort=top, restrict to the subreddit); only t= varies.
-            url = f"https://www.reddit.com/r/{subreddit}/search.rss?q=self:true+(guide+OR+megathread+OR+analysis+OR+%22deep+dive%22)&sort=hot&t={window}&restrict_sr=1&limit=100"
-            if after:
-                url += f"&after={after}"
-            
-            res = _get_feed_page(url, headers)
-            if res.status_code != 200:
-                print(f"STOPPED: Reddit returned HTTP {res.status_code} (window t={window}). Posts obtained before this: {yielded}.")
-                return
-            
-            entries = ET.fromstring(res.content).findall('a:entry', RSS_NS)
-            if not entries:
-                break  # this window is exhausted; move on to the next (narrower) window
-            
-            new_on_page = 0
-            for entry in entries:
-                post_id = entry.find('a:id', RSS_NS).text  # fullname, e.g. t3_1qdjxpo; also the `after` cursor
-                after = post_id
-                if post_id in seen_ids:
-                    continue  # already emitted from an earlier page/window; never write a repeat
-                seen_ids.add(post_id)
-                new_on_page += 1
-                
-                title = entry.find('a:title', RSS_NS).text or ''
-                content_el = entry.find('a:content', RSS_NS)
-                selftext = _html_to_text(content_el.text) if content_el is not None and content_el.text else ''
-                if selftext in ('[removed]', '[deleted]'):
-                    continue  # body is gone, so there is no whole post to label
-                full_post = f"{title}\n\n{selftext}".strip()
-                
-                # Clean newlines and quotes for clean CSV handling
-                clean_text = full_post.replace('\r\n', ' ').replace('\n', ' ')
-                if len(clean_text) > 30: # Filter empty/short posts
-                    yielded += 1
+    seen_texts = {_normalize(t) for t in existing_texts}  # duplicate guard: the file's posts + everything added this run
+    seen_ids = set()  # Reddit fullnames (e.g. t3_abc123) already looked at; skips repeats across pages and searches
+    total_new = 0
+
+    print(f"Fetching posts from r/{subreddit}: {len(SEARCHES)} searches, up to {UNIQUE_POSTS_PER_SEARCH} NEW unique posts each...")
+    for name, query, sort in SEARCHES:
+        found = 0           # new unique posts this search has contributed (counts towards UNIQUE_POSTS_PER_SEARCH)
+        skipped_dupes = 0   # posts already in labels.csv (or added earlier); passed over, NOT counted
+        end_reason = "reached the quota"
+        for window in RSS_TIME_WINDOWS:
+            after = None  # pagination cursor: the id of the last entry on the previous page
+            while found < UNIQUE_POSTS_PER_SEARCH:
+                url = f"https://www.reddit.com/r/{subreddit}/search.rss?q={query}&sort={sort}&t={window}&restrict_sr=1&limit={RSS_PAGE_SIZE}"
+                if after:
+                    url += f"&after={after}"
+
+                res = _get_feed_page(url, headers)
+                if res.status_code != 200:
+                    print(f"STOPPED: Reddit returned HTTP {res.status_code} during '{name}'. New posts obtained in total: {total_new}.")
+                    return
+
+                entries = ET.fromstring(res.content).findall('a:entry', RSS_NS)
+                if not entries:
+                    end_reason = "Reddit has no more results for it"
+                    break  # this window is exhausted
+
+                unseen_on_page = 0
+                for entry in entries:
+                    post_id = entry.find('a:id', RSS_NS).text  # fullname, e.g. t3_1qdjxpo; also the `after` cursor
+                    after = post_id
+                    if post_id in seen_ids:
+                        continue
+                    seen_ids.add(post_id)
+                    unseen_on_page += 1
+
+                    title = entry.find('a:title', RSS_NS).text or ''
+                    content_el = entry.find('a:content', RSS_NS)
+                    selftext = _html_to_text(content_el.text) if content_el is not None and content_el.text else ''
+                    if selftext in ('[removed]', '[deleted]'):
+                        continue  # body is gone, so there is no whole post to label
+                    full_post = f"{title}\n\n{selftext}".strip()
+
+                    # Clean newlines and quotes for clean CSV handling
+                    clean_text = full_post.replace('\r\n', ' ').replace('\n', ' ')
+                    if len(clean_text) <= 30:  # Filter empty/short posts
+                        continue
+
+                    # THE UNIQUENESS CHECK: already in column 1 of labels.csv (or added earlier this run)? Then pass it
+                    # and keep looking: it does not count towards this search's quota.
+                    key = _normalize(clean_text)
+                    if key in seen_texts:
+                        skipped_dupes += 1
+                        continue
+                    seen_texts.add(key)
+                    found += 1
+                    total_new += 1
                     yield clean_text
-                    if yielded >= limit:
-                        return
-            
-            print(f"  t={window}: page done, {new_on_page} new posts (total so far {yielded}).")
-            if new_on_page == 0:
-                break  # page held only already-seen posts; paging further would only produce duplicates
-            time.sleep(RSS_MIN_WAIT_SECONDS) # Respect rate limits (anonymous feed allows ~1 request/minute)
-        if yielded >= limit:
-            return
-        time.sleep(RSS_MIN_WAIT_SECONDS)  # also pause before opening the next window's first page
-    
-    print(f"STOPPED: All time windows {RSS_TIME_WINDOWS} are exhausted (no more unseen matching posts). Posts obtained before this: {yielded}.")
+                    if found >= UNIQUE_POSTS_PER_SEARCH:
+                        break
+
+                print(f"  [{sort}] page done: {found}/{UNIQUE_POSTS_PER_SEARCH} new unique so far, {skipped_dupes} already-present posts passed over.")
+                if found >= UNIQUE_POSTS_PER_SEARCH:
+                    break
+                if unseen_on_page == 0:
+                    end_reason = "paging only returned posts it had already seen"
+                    break
+                if len(entries) < RSS_PAGE_SIZE:
+                    end_reason = "Reddit returned its last (short) page"
+                    break  # a page shorter than the page size is the end of the results; saves one wasted request
+            if found >= UNIQUE_POSTS_PER_SEARCH:
+                break
+        status = "complete" if found >= UNIQUE_POSTS_PER_SEARCH else f"STOPPED EARLY ({end_reason})"
+        print(f"Search '{name}': {found}/{UNIQUE_POSTS_PER_SEARCH} new unique posts, {skipped_dupes} already-present posts passed over -> {status}.")
+
+    print(f"All searches finished. New unique posts obtained in total: {total_new}.")
 
 class AllModelsExhausted(Exception):
     """Raised when every candidate Gemini model has failed in this run (message = full per-model report)."""
@@ -395,13 +447,18 @@ def main():
         print(f"Resuming: {len(rows)} posts already in {OUTPUT_CSV}, {sum(1 for r in rows if not r[2].strip())} still unlabelled. Skipping Reddit scrape.")
     else:
         print(f"Phase 1: scraping posts from Reddit... ({len(rows)} rows already in {OUTPUT_CSV} will be kept; new rows go after them)")
-        new_rows = [[post, "", ""] for post in fetch_reddit_posts(limit=200)]
-        if not new_rows:
-            print("No posts were scraped, so nothing was added.")
+        # Phase 1 loop: the generator already skips posts found in column 1, and each new post is appended to the file the
+        # moment it arrives (crash-safe). `rows` mirrors the file so Phase 2 sees every row.
+        added = 0
+        for post in fetch_reddit_posts([r[0] for r in rows]):
+            new_row = [post, "", ""]
+            append_rows([new_row])
+            rows.append(new_row)
+            added += 1
+        if not added:
+            print("No new unique posts were found, so nothing was added.")
             return
-        append_rows(new_rows)
-        rows += new_rows
-        print(f"Phase 1 done: appended {len(new_rows)} posts to column 1 of {OUTPUT_CSV} (file now has {len(rows)} rows).")
+        print(f"Phase 1 done: appended {added} new unique posts to column 1 of {OUTPUT_CSV} (file now has {len(rows)} rows).")
 
     print("Phase 2: labelling posts with Gemini, one by one...")
     try:
