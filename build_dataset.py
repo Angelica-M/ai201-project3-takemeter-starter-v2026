@@ -20,7 +20,6 @@ genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # Output file: the existing labels.csv the notebook reads (data/labels.csv), not a new file in the cwd.
 OUTPUT_CSV = os.path.join("data", "labels.csv")
-COLD_COUNT = 20          # first N rows get "cold" in the note column (labelled with no prior pass)
 # Models to try, in order; filtered to those the API key can actually see. Lite models first: they accepted requests
 # when probed and have the roomiest free-tier daily quota. See ModelPool for how rotation works.
 GEMINI_MODEL_PREFERENCE = [
@@ -391,8 +390,9 @@ def main():
     # are added after the last one (a missing/empty file is simply created). Duplicates across runs are allowed on purpose
     # (they can be removed later); only a run that was interrupted mid-labelling resumes instead of scraping again.
     rows = read_rows()
-    if rows and any(not r[1] for r in rows):
-        print(f"Resuming: {len(rows)} posts already in {OUTPUT_CSV}, {sum(1 for r in rows if not r[1])} still unlabelled. Skipping Reddit scrape.")
+    # "Unlabelled" is judged by column 3 (the note): a row whose note is empty still needs Gemini, a filled one never does.
+    if rows and any(not r[2].strip() for r in rows):
+        print(f"Resuming: {len(rows)} posts already in {OUTPUT_CSV}, {sum(1 for r in rows if not r[2].strip())} still unlabelled. Skipping Reddit scrape.")
     else:
         print(f"Phase 1: scraping posts from Reddit... ({len(rows)} rows already in {OUTPUT_CSV} will be kept; new rows go after them)")
         new_rows = [[post, "", ""] for post in fetch_reddit_posts(limit=200)]
@@ -412,35 +412,47 @@ def main():
     print(f"Gemini models to try, in order: {pool.candidates}")
 
     skipped = 0
-    for idx, row in enumerate(rows):
-        if row[1]:
-            continue  # already labelled in an earlier run
+    for idx in range(len(rows)):  # index-based on purpose: `rows` is replaced by the on-disk copy after each write
+        if idx >= len(rows):
+            break  # the file got shorter during the run
+        row = rows[idx]
+        # CHECK 1 (before sending): only rows whose third column (note) is empty go to Gemini. A filled note means the
+        # row was already labelled, so it is skipped (saves quota and never overwrites an existing label/note).
+        if row[2].strip():
+            continue
+        sent_text = row[0]  # exactly what is sent to Gemini; compared against the file again before writing
         try:
-            result = label_post_with_gemini(row[0], pool)
+            result = label_post_with_gemini(sent_text, pool)
         except AllModelsExhausted as e:
-            print(f"\nSTOPPED: {e}\nRows labelled so far: {sum(1 for r in rows if r[1])}/{len(rows)}.")
+            print(f"\nSTOPPED: {e}\nRows labelled so far: {sum(1 for r in rows if r[2].strip())}/{len(rows)}.")
             return
         if result is None:
             skipped += 1
             print(f"Skipped post {idx + 1}: Gemini returned unusable output {GEMINI_MAX_ATTEMPTS} times (left unlabelled).")
             continue
-        label, note_reason, model_name = result
+        label, note, model_name = result  # (the "cold | " note prefix for the first 20 rows was removed as no longer needed)
 
-        # Mark first 20 as cold per project specs, remaining as pre-labelled
-        # (the hard-coded "pre-labelled, checked" text is gone: every row now carries Gemini's own ranked note)
-        # Cold is decided by the row's position in the file (idx), which is fixed now that all posts exist up front.
-        if idx < COLD_COUNT:
-            note = f"cold | {note_reason}"
-        else:
-            note = note_reason
+        # CHECK 2 (before writing): re-read the file as it is on disk NOW and confirm that row idx still holds the very
+        # text we sent to Gemini and still has an empty note. Gemini calls take seconds and the CSV can change meanwhile
+        # (rows edited/inserted/removed by hand, another run), so this guarantees the note lands on the row it belongs to.
+        # Writing starts from the on-disk rows (not our stale in-memory copy) so any outside edits are preserved.
+        disk_rows = read_rows()
+        if idx >= len(disk_rows) or disk_rows[idx][0] != sent_text:
+            skipped += 1
+            print(f"Skipped writing row {idx + 1}: column 1 in {OUTPUT_CSV} no longer matches the post sent to Gemini (file changed during the run). Nothing written.")
+            continue
+        if disk_rows[idx][2].strip():
+            print(f"Skipped writing row {idx + 1}: its note was filled in while Gemini was working. Existing note kept.")
+            continue
 
-        rows[idx] = [row[0], label, note]
-        write_rows(rows)  # save after EVERY row (crash safety)
-        labelled = sum(1 for r in rows if r[1])
+        disk_rows[idx] = [sent_text, label, note]
+        write_rows(disk_rows)  # save after EVERY row (crash safety)
+        rows = disk_rows  # keep the in-memory view in sync with the file for the next iterations
+        labelled = sum(1 for r in rows if r[2].strip())
         print(f"Labelled {labelled}/{len(rows)} (row {idx + 1}, model {model_name}): {label}")
         time.sleep(GEMINI_DELAY_SECONDS)
 
-    print(f"Done. {sum(1 for r in rows if r[1])}/{len(rows)} rows labelled in {OUTPUT_CSV} ({skipped} skipped). Rows per model: {pool.uses}")
+    print(f"Done. {sum(1 for r in rows if r[2].strip())}/{len(rows)} rows labelled in {OUTPUT_CSV} ({skipped} skipped). Rows per model: {pool.uses}")
 
 if __name__ == "__main__":
     main()
