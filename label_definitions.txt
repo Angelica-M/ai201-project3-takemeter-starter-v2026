@@ -1,10 +1,29 @@
 # Your label definitions, one per line, as `label: definition`.
 #
-# Copy these from your README so the baseline is judged on exactly the
-# definitions you wrote. baseline.py reads this file.
-#
-# Delete the examples below and put yours in.
+# Copied word for word from the "Label Taxonomy" section of README.md (each label's **Definition:** line), so the
+# baseline is judged on exactly the definitions I wrote. baseline.py reads this file; lines starting with # and
+# blank lines are ignored. These definitions ARE the baseline's prompt: the model gets nothing else, so it is only
+# as fair as they are. If a README definition changes, update the matching line here too.
+# Run: python baseline.py --data data/labels.csv   (see RUNNING.md)
 
-analysis: makes an argument backed by a specific, checkable fact
-hot_take: a confident claim with no support offered
-reaction: an immediate response to something that just happened
+division_23_full_mechanical_hvac: Posts covering entire building mechanical and environmental control systems under a single prime mechanical quote, combining sheet metal, equipment schedules, and hydronic piping.
+sub_trade_specialty_sheet_metal_vs_hydronics: Discussions strictly focused on granular trade-specific takeoffs such as ductwork weight/gauge calculations, fitting counts, or specialized piping materials.
+mep_package_mechanical_plumbing_electrical: Posts resolving scope overlaps, omissions, or package coordination boundaries between mechanical, plumbing, and electrical trades.
+general_construction_non_mechanical: Queries focused strictly on non-HVAC trade takeoffs, acting as a negative filter for structural, civil, or architectural trade discussions.
+general_pdf_cad_digitizers: Discussions centered on manual 2D quantity extraction, scale calibration, drawing markups, and basic PDF takeoff software without trade-specific database assemblies.
+specialized_mechanical_estimating_databases: Technical queries evaluating database software that automatically calculates fitting counts, material pricing feeds, and MCAA labor unit hours per unit.
+enterprise_erp_bidding_platforms: High-level workflow discussions regarding invitation to bid (ITB) management, subcontractor bid matrix creation, and ERP accounting synchronization.
+emerging_ai_automation_tools: Experimental or analytical posts evaluating AI, machine learning, OCR, or scripts for automated plan indexing and symbol counting.
+commercial_institutional_industrial: High-value B2B plan-and-spec or design-build project estimates requiring formal specification reviews, unit pricing breakdowns, and structured bid forms.
+multi_family_residential_tract_housing: Repetitive wood-frame residential or apartment estimating based on price-per-square-foot, per-unit, or per-door metrics.
+service_replacement_retrofit_bidding: Quick-turnaround commercial service bids, equipment changeouts, or time-and-material quotes with short diagnostic-to-quote cycles.
+public_works_prevailing_wage_bidding: Government or public sector bidding involving certified payroll, Davis-Bacon prevailing wage determinations, and strict sealed bid procedures.
+software_benchmarking_technical_workflow: Posts evaluating features, pricing tiers, system stability, and speed efficiency across competing estimating software platforms.
+bid_strategy_scope_gaps_gc_relations: Operational posts on protecting profit margins, managing incomplete drawings, writing exclusions, and handling general contractor bid deadlines.
+career_pathing_compensation_hiring: Discussions regarding estimator compensation packages, remote work options, workload expectations, and career advancement paths.
+industry_venting_operational_burnout: Frustration-driven posts highlighting bid-day stress, last-minute addendums, unrealistic GC deadlines, and industry friction points.
+senior_b2b_mechanical_estimator_chief_estimator: Posts authored by experienced professionals demonstrating deep industry terminology, calibrated labor multipliers, and strategic risk management.
+general_contractor_precon_coordinator: Posts written from the buyer perspective evaluating how subcontractor quotes are reviewed, leveled, and combined into a prime bid.
+field_tech_residential_installer_apprentice: Entry-level or field-focused posts seeking guidance on transitioning into the office, reading blueprints, or beginner tools.
+software_vendor_sales_representative: Posts or replies containing self-promotional pitches, demo offers, or vendor-driven product marketing.
+unrelated: Catch-all category for posts that fall entirely outside construction precon, bidding, and estimating software—such as generic financial advice, unrelated software programming queries, random spam, or general sub trades asking non-estimating jobsite questions.
