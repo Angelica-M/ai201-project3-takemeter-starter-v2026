@@ -1,0 +1,267 @@
+{
+  "model": "facebook/bart-large-mnli",
+  "n": 31,
+  "seed": 42,
+  "held_out": true,
+  "used_definitions": false,
+  "scores": {
+    "n": 31,
+    "accuracy": 0.3548387096774194,
+    "f1_macro": 0.21488997113997116,
+    "per_label": {
+      "bid_strategy_scope_gaps_gc_relations": {
+        "precision": 0.2,
+        "recall": 0.5,
+        "f1": 0.28571428571428575,
+        "support": 2
+      },
+      "career_pathing_compensation_hiring": {
+        "precision": 1.0,
+        "recall": 0.2857142857142857,
+        "f1": 0.4444444444444445,
+        "support": 7
+      },
+      "commercial_institutional_industrial": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 1
+      },
+      "emerging_ai_automation_tools": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 2
+      },
+      "enterprise_erp_bidding_platforms": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 1
+      },
+      "general_construction_non_mechanical": {
+        "precision": 0.4,
+        "recall": 0.5,
+        "f1": 0.4444444444444445,
+        "support": 4
+      },
+      "general_contractor_precon_coordinator": {
+        "precision": 0.2222222222222222,
+        "recall": 1.0,
+        "f1": 0.3636363636363636,
+        "support": 2
+      },
+      "general_pdf_cad_digitizers": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "industry_venting_operational_burnout": {
+        "precision": 1.0,
+        "recall": 0.25,
+        "f1": 0.4,
+        "support": 8
+      },
+      "multi_family_residential_tract_housing": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "public_works_prevailing_wage_bidding": {
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "support": 2
+      },
+      "senior_b2b_mechanical_estimator_chief_estimator": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "software_benchmarking_technical_workflow": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 1
+      },
+      "software_vendor_sales_representative": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 1
+      },
+      "specialized_mechanical_estimating_databases": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "unrelated": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      }
+    }
+  },
+  "predictions": [
+    {
+      "text": "Best estimating software for flooring  Hi everyone, I'm looking for flooring software that can handle takeoff, unit pricing analysis, and generate estimates in a custom format so I can better manage changes. Right now, we use one tool for takeoff, another for unit pricing, and another for bidding, and it's very time-consuming. I'm wondering if there's a solution that can do everything in one place. Thanks for your help! Best!",
+      "gold": "general_construction_non_mechanical",
+      "predicted": "general_construction_non_mechanical"
+    },
+    {
+      "text": "Two months ago I posted here my data analysis on Texas (TxDOT) bid data and it was warmly received. So I built a free non-commercial pre-bid tool based on the same data.  This is a follow up on this post: I analyzed Texas (TxDOT) bid data for 4,583 projects. Here's what I found. : r/estimators Since the analysis was appreciated I invested some time in making a free non-commercial tool that is constantly up-to-date with the latest data. It\u2019s Texas-only for now and it includes: - a public data overview of TxDOT bids - charts/tables on competition, close losses, bid spreads, seasonality, and district patterns - a pre-bid check section with: - an engineer's estimate predictor based on public bid inputs - a win probability check - 5 similar historical bids from the TxDOT database as benchmarks after you run the check Link: TxDOT Bid Intel | Texas Bid Data and Pre-Bid Checks Important: there are some discrepancies in the numbers from my previous post and the numbers in the tool. The reason is mostly that the webapp uses up-to-date data from TxDOT. Happy to receive any feedback :) Hope you'll find it useful.",
+      "gold": "public_works_prevailing_wage_bidding",
+      "predicted": "general_contractor_precon_coordinator"
+    },
+    {
+      "text": "Looking to hire an estimator? Are you an estimator looking to make a move? Post here!  submitted by /u/PM_ME_YOUR_MECHANISM [link] [comments]",
+      "gold": "career_pathing_compensation_hiring",
+      "predicted": "career_pathing_compensation_hiring"
+    },
+    {
+      "text": "Freelance electrical estimator  I am looking to do electrical estimation freelancing. If anyone can please guide me through this process, I have five years of experience. I would appreciate it if anyone could provide me with The process of how to set up this startup service. Also, Is anyone using accubid estimating software, and how much would it cost if I buy it for my freelance work?",
+      "gold": "career_pathing_compensation_hiring",
+      "predicted": "bid_strategy_scope_gaps_gc_relations"
+    },
+    {
+      "text": "Taking it in the butt from subs: A 21st century guide navigating construction in the modern age  Started a new job fairly recently and we're struggling with finding more subs (along with everyone else, I know). How are you guys finding more? New construction uses bidconnected but I'm in reno and we use a lot of all-purpose guys. How can I find more? We're locked in with certain trades. \"Juan does concrete. Pablo doesn't do drainage\" but we don't have enough guys to compete on labor pricing. Just curious about how y'all are going about this.",
+      "gold": "bid_strategy_scope_gaps_gc_relations",
+      "predicted": "general_construction_non_mechanical"
+    },
+    {
+      "text": "Any advice on what I should be charging?  Hey everyone, I recently started working with a contractor on a $2.5 million custom home project. He asked if I could put together a construction schedule and bid analysis based on the home plans and a rough estimate he had in mind for labor and materials. He wants me to bill him as a consultant for now, and he\u2019s really happy with the work and interested in continuing our collaboration. My question is: What would be an appropriate rate to charge for this type of work? It took me about 14 hours in total, including revisions. For background, I have a bachelor\u2019s in Finance and currently work as an analyst at a construction firm.",
+      "gold": "career_pathing_compensation_hiring",
+      "predicted": "general_contractor_precon_coordinator"
+    },
+    {
+      "text": "If you submit bids as a Microsoft Word document, I hate you.  That's pretty much it. Print to PDF you psychos.",
+      "gold": "industry_venting_operational_burnout",
+      "predicted": "public_works_prevailing_wage_bidding"
+    },
+    {
+      "text": "Made the jump, you can do it too.  Started in construction with a shovel and managed to work my ass off till an estimator/pm (proj. 500k or less) position opened up, hated the company. Unpaid overtime, making 50% of the salary that companies are offering in my area, no benefits, yelling everyday. Mustered up the courage to find a new job and now make the industry average and have benefits and no more yelling everyday. It felt impossible, like construction just is a brutal landscape full of assholes but there are places where you can genuinely be happy to go to work the next day.",
+      "gold": "career_pathing_compensation_hiring",
+      "predicted": "general_construction_non_mechanical"
+    },
+    {
+      "text": "Last minute addendums  GC's why do you do last minute addendums and not change the bid date? I come into the office this morning to wrap up a large bid that's due tomorrow only to find an addendum released on Saturday changing a decent portion of my bid. This addendum answered over 150 rfis and left dozens still unanswered. Why get half assed rushed numbers when you can bump it a week and get solid numbers. This project is 10s of millions of dollars and you just caused chaos for like 20 subs.",
+      "gold": "industry_venting_operational_burnout",
+      "predicted": "general_contractor_precon_coordinator"
+    },
+    {
+      "text": "Made a free Spec Search tool that's better than Bluebeam \u2013 demo.withglimmer.com  Hi r/estimators! Here's the site: https://demo.withglimmer.com. My dad is a long-time estimator and a few weeks back, he showed me his process of searching through random keywords on BlueBeam to find specific information in his specs. To help with this, I made an site that makes searching through your specs as easy as making a Google search. https://reddit.com/link/1b0t2wi/video/6kts6iddwzkc1/player Unlike Bluebeam, this uses \"semantic search\" which understands the meaning of your search and tries to find it within the spec. So, you can make a search like \"Can I use above ground fuel storage tanks on site\" or \"Door frame material\" and it will answer the question directly while citing the source. I'm trying to see if it would be useful for people at other companies as well, so I'm trying to gather feedback. I would love for everyone here to try it out, and if you want to test it out on your own spec, you can fill out the form on the site or just leave a comment and I can send you a DM.",
+      "gold": "emerging_ai_automation_tools",
+      "predicted": "bid_strategy_scope_gaps_gc_relations"
+    },
+    {
+      "text": "Electrical Estimating Books - Opinions?  Hey Team, Anyone had experience with Estimating books for Industrial Electrical work? Such as the following: TSI Luckins Electrical Installation Times Guide https://www.constructionbooks.net/building-price-guides/luckins-installation-times-guides/tsi-luckins-electrical-installation-times-guide-0000000000001.aspx Spon's Estimating Costs Guide to Electrical Works: Unit Rates and Project Costs (Spon's Estimating Costs Guides) https://www.amazon.com/Spons-Estimating-Costs-Guide-Electrical/dp/1138373117 Keen to get more knowledge regarding expected industry standard time-frames for the installation of equipment, and Estimating for Electrical in general. Cheers",
+      "gold": "general_construction_non_mechanical",
+      "predicted": "general_contractor_precon_coordinator"
+    },
+    {
+      "text": "How do you stay ahead enough to be able to download projects, reviews docs, and ask questions before the deadline?  I\u2019ve been doing this for 18 years and have almost never been able to get ahead of a project enough to review and ask questions before the cutoff. Like I can count on one hand the number of times I\u2019ve been that far ahead. It\u2019s almost always 1-3 days before bid deadline (closer to 1 day or day of)",
+      "gold": "industry_venting_operational_burnout",
+      "predicted": "general_contractor_precon_coordinator"
+    },
+    {
+      "text": "Mind just blown by hidden excel trick  I have been using excel for about 25 years now and just had my mind blown by this trick that to be honest with you I wish I had known a lot sooner. Maybe you already knew it but I just found out about it. If you are like me that post screenshots of drawing details and paste it all over your spreadsheets, you are going to have images floating around like crazy. I wanted the ability for the screenshot to popup when I need to see the image and hide when I dont. Doing a little research on youtube I found this guy that showed how this can be done with the New Note option on a cell. If you right click on any cell, you will see the NEW NOTE option. When you click on it the small text area for the note will appear. He said if you hover over the note area and right click and click on FORMAT COMMENT only the FONT tab will open. BUT and here is the trick, But if you hover over the BORDER of the NOTE (not inside the note but on the BORDER; you will notice when you are on the border when your cursor changes to a cross of arrows ) and right click and click on FORMAT COMMENT, then not only the FONT tab will appear but a bunch of other tabs too. Click on COLORS AND LINES, under fill > Color click on down arrow, then Fill Effects. Then on picture > select your picture then OK. And bam there you have it. an image that pops up only when you hover a cell. leaving the lock picture aspect ratio uncheck will allow you to size the window later to the actual size of the image. Now I wont have floating images all around my spreadsheets. Super usefull when you want to see a detail on a drawing really quick, without having to switch to bluebeam or your pdf viewer to see it. or any image you would like really. On a sidenote, you can quickly create images from your PDF with the snipping tool. JPG format works great. Edit1 = BONUS TIP = With the snipping tool PNG and GIF images work as well.",
+      "gold": "software_benchmarking_technical_workflow",
+      "predicted": "bid_strategy_scope_gaps_gc_relations"
+    },
+    {
+      "text": "i finally bucked up and quit my job after 12 years  been at the same small business sub for 12 years, 9-10 of which was estimator. It was basically a dead end job for the last 3-4 or so. Was told I'd make no more money unless the company was to grow but also was told by the owner he didn't really want to grow that much. Felt stuck and thought I spent too much time at 1 place and would never find something else. Then it finally happened. I'm now 2 weeks into a new position at a bigger and so far much better company. I'm estimating a trade a I have no 1st hand experience in but a lot of my existing knowledge has shown to be transferrable. For like 2 years I interviewed and all I was seeing is companies who expect you to come in the door ready to hit the ground running and knowing everything. This company knew I had no specific experience in their trade but they saw the commonalities between where I was and what they do and made me a quick offer once I interviewed. 1 teams meeting, 1 in person the following week. offer in hand by the end of that week. Rather than throw me to the wolves and have me start bidding jobs I've spent these two weeks \"bidding\" old jobs then after each, sitting down and reviewing it with someone to compare my results to theirs and learn new things to apply on the next one. Overall I've always been close, there's just some specifics that are new to me that I need to work on. Even little things are just so much better. My previous employer was \"you start at 6:30am and you're late if it's 6:31am\". \"lunch is 11:30am to 12:15pm and you're late if you're back 12:16pm\". I had more leeway with this than others but I still hated seeing people treated that way. The new place is like come in between 6:30am-9am, whatever works for you, just do 8 hours. Take lunch whenever you want for however long you want, so long as the work for the day is getting done. Then there's the fact that my base comp is nearly $15k higher, bonuses can push that to over $20k. All other benefits are similar if not better. My point is even if you feel stuck where you are, just keep looking. Something better will one day show itself and once it does, grab it go.",
+      "gold": "career_pathing_compensation_hiring",
+      "predicted": "career_pathing_compensation_hiring"
+    },
+    {
+      "text": "Resources to learn heavy civil estimation.  Hello all, I'm a graduate student in Construction, and I'm looking to learn how to do takeoffs for heavy civil construction. Can you guide me to some resources to learn this? Thank you!",
+      "gold": "general_construction_non_mechanical",
+      "predicted": "bid_strategy_scope_gaps_gc_relations"
+    },
+    {
+      "text": "AI in preconstruction (scope notes, bid-leveling)  There's so much hype around AI, but I genuinely believe AI can introduce some much needed improvements in preconstruction and this is something that really excites me. For the last 4 weeks, I've been exploring ideas around getting AI to help me generate better scope-notes / line-items. I wanted to share some of my findings w/ the community. The ultimate vision I like scifi-stuff so I started wondering if we could build an intelligent AI-assistant that automatically ingests plans issued by an architect and instantly does the following? Recommended subcontractors : What subcontractors are required on this project based on scope outlined in plans? Imagine a world where GCs can go from plans to a list of relevant subcontractors within seconds. Line items : Analyze key notes, general notes & schedules to understand scope of work per trade and instantly generate a list of required line-items for a GC to review. Imagine if every GC had an AI-assistant to generate a first-draft for bid-leveling / scope-sheet and their job was to review and make changes. Highlight gotchas: Call out important details to watch out for (e.g. material substitutions, exclusions, inclusions, special materials). Addendas: What are the exact changes that have occurred on the plans? How does this fit into context with every trade? A GC shouldn\u2019t have to compare new and old versions of plans side-by-side to understand these changes. Instead an AI should instantly call out the changes and provide notes & context. TLDR - AI shows promise, but there's still a lot of hard-technical challenges Here's a snapshot of HVAC floor plans from one of my projects. \u200b https://preview.redd.it/vn62hw40c1ib1.png?width=2154&format=png&auto=webp&s=07322fbe2242bd679dd723869f59dc5d8b55d15d If you feed this input to an AI / Large-language model, it can start to effectively summarize this info into structured format. https://preview.redd.it/oew00go5c1ib1.png?width=1188&format=png&auto=webp&s=860b592c7f74268e21df81aa89a2b4d7a607fb01 In fact, I was able to generate a bunch of scope notes for number of trades (demo, HVAC, etc). You can see for yourself via this video! https://www.loom.com/share/3602d5b464de4d4798559b98150a0880?sid=2db96f8e-27fc-486a-af14-764bec6fe506 \u200b Bold Prediction (old world vs new world) The old world of preconstruction A GC has to look through a big PDF of construction blueprints and do these things. Sub selection : Look through 100-page plans, identify all scopes that are needed manually (e.g. electrical, mechanical, drywall), invite subs Scope sheet : Analyze key notes, general notes & schedules to understand scope of work per trade and instantly generate scope / line-items Material sheets: Same process as above Specs / gotchas / addendas: Compare plans side by side, scan a bunch of construction text Highlight gotchas: Call out important details to watch out for (e.g. material substitutions, exclusions, inclusions, special materials). Addendas: What are the exact changes that have occurred on the plans? How does this fit into context with every trade? A GC shouldn\u2019t have to compare new and old versions of plans side-by-side to understand these changes. New world of precon (w/ AI) Sub selection: Instantly call out relevant trades -> share list for GC to review Scope sheet: Translate plans, identify line-items, transcribe into an excel sheet automatically --> share w/ GC to review Material sheets / specs / gotchas / addendas: Provide relevant context, call out changes --> share w/ GC to review Where AI fails Despite the excitement, I think the technology still has major limitations. For example, I uploaded entire blueprints to chatGPT and Claude and just prompted the AI to do various stuff (e.g give me line items for electrical, etc). Results were stupidly awful, which means AI is not SO SMART that it can fully automate the job of an estimator. Large plans: When the plans are large, the AI models cannot detect all scope. It just can't process all this information. Different formats: Plans come in various formats, PDFs, images, multiple files. Sheets are a messy compilation of general-notes, product-specs, diagrams, key notes, addenda clouds, tables. Even the best AI models can\u2019t understand this complexity out-of-the-box. Lost Context: Plans are rich with information (schedules, specs, key notes), but AI models see all this as 1-blob of text. Even something as simple, give me all materials that are spec'd on this set of plans is difficult. That said, you can start to get around these problems by making it easier for AI to understand your blueprints. Some techniques i found useful were Give AI context on your project Limit the tasks to just a single section of the plans (e.g. electrical, mechanical, architectural) Use some computer vision to tag material schedules Use OCR to standardize the text on blueprints When you do this, the results start to look pretty good (as shown in my video). E.g. using computer vision to segment blueprints to help AI Building a community of GCs / subs excited about AI This AI-application really excites me. I'd love to build a small-community of GC/sub precon professionals who are interested in exploring AI ideas on the side (e.g. applying AI to scope generation, bid-leveling, conceptual designs). We can build some prototypes, exchange ideas and see where these ideas go. If these ideas excite you, drop me a DM or a comment and we can start an email-group. Would also love to hear what other people have seen w/ AI applied to precon / construction (pitfalls, limitations, exciting applications, etc).",
+      "gold": "emerging_ai_automation_tools",
+      "predicted": "senior_b2b_mechanical_estimator_chief_estimator"
+    },
+    {
+      "text": "How to increase takeoff speed  Hello to all the senior estimator , i have being working as jr estimation engineer for 2 month and my boss told me that I am very slow at work and the previous employee could complete a 2 project per day but for now I can only completed 1 project per day. I request you to guide me to increase my takeoff speed (I use RFMS measure for flooring takeoff and currently learning OST).",
+      "gold": "career_pathing_compensation_hiring",
+      "predicted": "senior_b2b_mechanical_estimator_chief_estimator"
+    },
+    {
+      "text": "Compensation types and extra  Other than base salary, what do you get paid based on? Is it revenues, profits, how the job went after a cost analysis is finished? Of course there\u2019s lots of other things influencing so just curious as to what options are out there and why they would or wouldn\u2019t make sense. Thanks!",
+      "gold": "career_pathing_compensation_hiring",
+      "predicted": "general_contractor_precon_coordinator"
+    },
+    {
+      "text": "Updating bid forms in BC; subs can't see the new form??  I've run into this a few times now. After updating bid forms, and when requesting the subs revise and resubmit their bid in Building Connected I've had a few say they don't see the new bid form, it is exactly the same. Has anyone else run into this before? BC's website guide on the topic states otherwise.",
+      "gold": "enterprise_erp_bidding_platforms",
+      "predicted": "enterprise_erp_bidding_platforms"
+    },
+    {
+      "text": "Turns out the biggest bid risk was the closing meeting  Spent the last month on probably the best opportunity we\u2019ve had in a year. Public college job, around $4M, very complex glazing package, curved glass, tons of unique glass types, difficult specs, all of it. We had a real edge because I had a glass supplier that nobody else had access to at that pricing. The day before close, I had us at $3.979M and felt really good about it. Then the final bid meeting arrives. The rest of the team was not prepared despite me sending multiple request to review documents during that month. Other execs got nervous about execution risk, bad GCs, and some current jobs that are going badly. Installation got jacked up by about $320k to a total of $4 297 000. We lost. Now the results are out: one bidder at $4,070,000 and another apparently just under $4M. So the number I spent a month building was basically dead on. I\u2019m fucking crushed. We finally had a real advantage, and we priced ourselves out of it thinking we had leverage over others. Company is already losing money and there\u2019s nothing else like this in the pipeline right now. Estimating can be a brutal job sometimes.",
+      "gold": "industry_venting_operational_burnout",
+      "predicted": "industry_venting_operational_burnout"
+    },
+    {
+      "text": "My Estimating Position Has Turned More Into a Sales Position  I\u2019ve been a sub contractor estimator for about 4 years now at the same company. I enjoy going through plans, doing my takeoff and pricing the job out. However what\u2019s starting to wear on me is that I\u2019m being pressured to have to take people out to lunches and bars to shmooze them to get work jobs rather than bid an accurate detailed project. I used to like what I do but now it feels like my job is more of sales which I never wanted to be in because I\u2019m naturally introverted and am ok with that. Anyone else dealing with someone similar or what they did to get out of a situation like this?",
+      "gold": "industry_venting_operational_burnout",
+      "predicted": "industry_venting_operational_burnout"
+    },
+    {
+      "text": "RS Means Square Footage Cost  \u200b I\u2019m trying to get the cost per square footage in San Francisco. Can anyone provide the median cost for the recreational building type from RS Means? The RS Means guide that I'm look at right now is $390/sf, but I'm not sure if it's up to date.",
+      "gold": "commercial_institutional_industrial",
+      "predicted": "specialized_mechanical_estimating_databases"
+    },
+    {
+      "text": "Software Question [NOT PROMOTING]  Hi all, I've graduated from Berkeley computer science and have experience in software at big tech. I have been building software for bids alongside other things in construction and was wondering if you could guide me to the correct way you would want to be reached out to. I don't want to spam anyone with nonsense but I am having a hard time figuring out what the best way is to get my product in front of people like you. Thank you :)",
+      "gold": "software_vendor_sales_representative",
+      "predicted": "unrelated"
+    },
+    {
+      "text": "Help a newbie in insulation takeoff  I just got a new job as an Insulation Commercial Estimator, but I don't have any idea how to perform takeoff for this division. My background is more on exterior siding/cladding, glazing, and flooring. Is there any online reference/s that I can use to study how to conduct this takeoff? Or any tips or 'process' and the common mistake/s that you usually encounter based on experience. Perhaps a guide on what exactly to look for when reading the drawings. Thank you all in advance!!!",
+      "gold": "general_construction_non_mechanical",
+      "predicted": "general_construction_non_mechanical"
+    },
+    {
+      "text": "Female Estimator - it\u2019s tough sometimes  I am a fab estimator - I guess division 5? I\u2019ve been doing this for years, and I\u2019m pretty used to the good ole boys in the field assuming I\u2019m stupid or don\u2019t know what I\u2019m talking about until I end up proving myself (for lack of a better term). I\u2019m always the only woman in my department, sometimes the only one at my company. I\u2019m damn good at my job, but holy shit it gets frustrating how it\u2019s always assumed I can\u2019t know what I\u2019m doing because I\u2019m a woman. This is just pretty much a rant, and this may not be the right place. I will say my team has my back 150%, and I appreciate that. For any women looking into trying estimation, just know, it\u2019s hard to earn trust from the field. When you finally do show you know what you\u2019re doing, the custom are loyal as can be. But I just started at a new company a couple of months ago, so it\u2019s like starting from scratch to prove myself.",
+      "gold": "industry_venting_operational_burnout",
+      "predicted": "general_construction_non_mechanical"
+    },
+    {
+      "text": "I analyzed Texas (TxDOT) bid data for 4,583 projects. Here's what I found.  Hey all, I've been poking around public bid data lately, and figured you might find some of it interesting. Pulled the Texas Department of Transportation (TxDOT) bid tabulation dataset: 732,235 18,171 bids (see edit 2) across 4,583 projects from Jan 2024 through now. Here's what jumped out. Win rates: For contractors with 10+ bids on record: - Median win rate: 23.2% - 44.2% of contractors win less than 1 in 5 - Only 20.2% win more than half their bids So if you're hitting 20-25%, you're right at the median. Better than nearly half the field. This is the interesting part. Of all losing bids 83,292 lost by 5% or less. That burns!: | Gap to Winner | % of Losses | Raw Count | | \u22641% | 3.0% | 17,195 bids | | \u22645% | 14.8% | 83,292 bids | | \u226410% | 29.3% | 165,387 bids | The median loss margin was 17.7% so half of all losses were closer than that, half were further. The distribution has a long tail of people who missed by a lot, but a solid chunk are in the ballpark. Competition varies by district Average bidders per project overall: 4.0 Most competitive districts: - Childress: 5.1 avg bidders (57 projects) - Tyler: 4.9 avg bidders (137 projects) - Yoakum: 4.8 avg bidders (256 projects) Least competitive: - Lubbock: 3.3 avg bidders (122 projects) - Maintenance Division: 3.3 avg bidders (38 projects) - Laredo: 3.2 avg bidders (93 projects) 8.7% of projects only had one bidder. Location matters. Seasonality - Busiest: Aug - Slowest: Dec Bid spreads are all over the place On projects with 3+ bidders, the median spread (low to high) was 44.5%. Only 5.6% of projects had spreads under 10%. So there's real variance out there, some sees everyone's within a few percent, others have wildly different reads on scope/risk. Data's public on data.texas.gov if anyone wants to dig in themselves. Happy to answer questions. Since this is Texas-only. I might do the same type of analysis for other states if I have time/there is interest. Do these data make sense to you? I was quite surprised by the number of close losses. EDIT: A commenter pointed out that mixing maintenance with construction projects skews the data. They were right: | Metric | Construction | Maintenance | | Median Win Rate | 17.2% | 24.3% | | Median Bid Spread | 40.0% | 51.1% | | Losses \u2264 5%| 15.7% | 10.6% | Construction is indeed tighter. EDIT 2: Thanks to another commenter I noticed that there is a mistake: the 732,235 number is the total row count of the dataset, not the unique bid count. TxDOT data lists every single line item (mobilization, asphalt, traffic control, etc.) as a separate row. The correct number of bids is 18,171, I will add this correction in the edit. The good news is that the \"4.0 average bidders\" and the win/loss percentages in the post were calculated using unique vendor IDs per project, so those stats hold up.",
+      "gold": "public_works_prevailing_wage_bidding",
+      "predicted": "public_works_prevailing_wage_bidding"
+    },
+    {
+      "text": "how big of mistake can you make before you go oh shit I fucked up  thankfully, i don't make many mistakes and the ones I do are typically low value and not even worth thinking about once realized. We're wrapping up a $300k project, which is considered big for our trade. as we're wrapping it up we've come realize I've made a mistake to the tune of maybe $6.5k. On one hand, it sucks because it means i didn't do my job correctly and it extra sucks because this mistake was actually made 2 fucking years ago and only now showing its face so it's like a slap in the dick from the past. I don't know what it is about this specific job but my boss is acting like it's the worst thing ever and I'm sitting here like yea I'm sorry, this sucks......but it's $6.5k on a $300k job. like, god damn in the grand scheme of things I don't really think it's that serious.",
+      "gold": "industry_venting_operational_burnout",
+      "predicted": "software_vendor_sales_representative"
+    },
+    {
+      "text": "Levelling / subcontractor price reporting  Hello estimators, I\u2019ve been asked by a new client to write a report on the subcontractors I have had price a project for them. It\u2019s a simple enough project, and I\u2019ve done plenty of subcontractor analysis before but never had to produce a report. My question is have you? And what do you include? For reference my normal process is to get the quotes, start with the cheapest noting derogations / deviations from spec and drawings and any Qualifications as well as anything they haven\u2019t priced. I then move to the next one and make the same notes etc If I can plug prices I do and if I feel that a contractor needs to add something in then I go back to them eTC I also check all the paper work is there form of tenders, outline programmes Etc At the moment my idea is to Chuck all this into a spreadsheet and go from there.",
+      "gold": "general_contractor_precon_coordinator",
+      "predicted": "general_contractor_precon_coordinator"
+    },
+    {
+      "text": "Overbid a job on accident and GC just said they do Join Check Agreements for first time subs.  Looking for advice here as I'm still very green when it comes to estimating jobs. I bid materials for a job at ~90% markup on accident. I used rough material numbers that I've seen in the past. Fast forward 4-ish months when we got the green light from the GC to do the job, I reached out to my supplier to get a firm number. (I don't do it that way anymore but I did when I first started). The material cost is way lower than I had bid it at. Normally, I'd be happy with that but the GC also let me know they do a Joint Check Agreement for first time subs, meaning they will see the material cost from my supplier. Any advice on what to do? I thought about rolling it into labor but ~90% is a huge amount to do that.",
+      "gold": "bid_strategy_scope_gaps_gc_relations",
+      "predicted": "bid_strategy_scope_gaps_gc_relations"
+    },
+    {
+      "text": "Get your estimating certification HERE  I'm starting a estimating certification program. Do I know how? No. Am I qualified? Shit. Probably as well as anyone else. I propose y'all go to your employer and tell them you're interested in continuing education. My class costs $7,891.69 and takes a week. I'll throw you in our spare bedroom or the extended stay down the goddamn street. We'll go drinking bourbon and shoot pool and shit. You wanna talk about estimating? That's awesome because I fucking LOVE talking about estimating. Go back to work a week later with a real nice, professional fucking certificate. Your name will be on the website FOR LIFE. You can put it on your resume. When people call, I will ALWAYS say that not only did you get the certificate, but you remain one of my favorite students. A wunkind of goddamn estimating. You get a week-long vacation. I get your boss' money. Am I missing something here? Is there any reason not to do this? How do we make it better? \u200b",
+      "gold": "industry_venting_operational_burnout",
+      "predicted": "general_contractor_precon_coordinator"
+    },
+    {
+      "text": "An in-depth guide for finding subs in 24-hrs  Hello construction reddit, I see a lot of posts from GCs asking \u201chow do I find subs to bid?\u201d. This is especially hard for GCs that are moving to new markets because they have no existing relationships (e.g. traveling GC that is expanding operations from CA to NV). A lot of posts & blogs provide generic strategies like Use google maps Use bid platforms like building connected, smartbid Drive around in a truck and talk to subs Ask for referrals IMO these solutions are surface-level and don\u2019t truly solve the problem. A few months ago, I saw an opportunity to build sublists quickly using techniques common in the software industry (web-scraping, programmatic emailing, machine learning) and it\u2019s been working well. Today, I want to share insights on how to build sublists with the community because it might be useful to other GCs. Background For context, I built company that makes bid-management tools for commercial trade contractors. We have a sales team that needs high-quality commercial subcontractor leads. Sourcing these leads proved difficult. We scraped databases (BlueBook, BuildingConnected), but we ran into so many data problems (subs in wrong trades, wrong contact info) We\u2019d use google maps, but half the results were residential leads and useless for us We\u2019d purchase lists from companies like ZoomInfo, but they missed a lot of important construction-specific attributes that sales needed (e.g. trade, union/non-union) So we built an in-house solution to generate sublists quickly. Then one day, a GC friend saw this and asked if he could use this for one of his projects. He\u2019s the chief estimator GC that builds luxury retail chains (Tiffany\u2019s, Dior, Ralph Lauren) and they travel all over the country. It turns out it\u2019s critical for them to build high-quality sublists quickly in new territories as well. He inspired me to write this post b/c he found our tool useful. Problem Let\u2019s say you\u2019re a GC that focuses on luxury retail work in Los Angeles, CA, but you\u2019ve won a negotiated job in Las Vegas, NV. How would you generate a list of NV subs that would be a good fit for the job? Our goal was to generate a list of subs with this information Trades performed Area of work MWBE status Union / non-union status Average project size Past projects Estimating decision makers (emails & phone #s) Failed Solutions We tried a lot of methods, but they all failed for different reasons. Google maps + calls Using google maps, we would run a query \u201celectrical contractors in Las Vegas\u201d, then research their website and manually call each sub to ask if they had done luxury retail. The problem is it took days and hours just to prep a sublist. As a small estimating team we didn\u2019t have the manpower to call the thousands of subs and vet them. BuildingConnected & Planhub & other bid platforms BuildingConnected & Planhub seemed like a nice solution because they have a large database of subs. We ran into two problems. First, the information was out-of-date (subs listed under wrong trades, contact information was wrong) which caused us to have to manually fix a lot of the data. Secondly, we\u2019d send a generic ITB and barely get any responses because in any competitive market, subs don\u2019t respond to generic bid-platform ITBs. Ask for referrals We\u2019d ask for referrals from 1-2 local subs and then slowly work the network. For example, we\u2019d talk to a manufacturer\u2019s rep, get 1-3 HVAC subs. Then we\u2019d ask these HVAC subs for recs for drywall and electrical and glass subs, rinse and repeat. This was great, but it was still incredibly time-consuming. Again manpower issue. Our approach (web-scraping, machine learning, programmatic emails) The definition of a great sublist is simple. Find every single subcontractor in an area Get accurate, up-to-date on the sub (e.g. trades performed, MWBE, union/non-union) Find the right decision maker My challenge was to build a way so that our estimating team could push a button and get accurate sublists without doing any work. The first thing I did was break down this challenge into mini-problems. (A) Map the universe of subs in an area The first challenge was to find every single construction sub in a market. To do that, I built a web-scraper that would pull a sub\u2019s name and website URL from a few construction databases, which publicly list subs. BlueBook Association websites for specialty trades like NECA, AWCI In addition, google maps has an API so you can run automated queries like \u201celectrical sub in <zip code>\u201d. I created a list of common trades we needed and every zip code in the nation to build a gigantic list of subs. If a sub had a website or some internet presence, these methods would find it. Now I have a gigantic list of every sub in the U.S. (B) Scrape each website, clean the data & get accurate information about the sub A gigantic list of subs and websites isn\u2019t useful and there\u2019s a lot of problems. For example, the sub\u2019s website may be out-of-date, it may be a manufacturer\u2019s rep rather than a sub. Therefore, the second challenge was to clean the data and make it useful for bidding outreach. To do that, I built a web-scraping tool that would visit website-by-website and extract the following information Trades performed Area of work MWBE status Union / non-union status Average project size Past projects Estimating decision makers (emails & phone #s) Phone #s Estimating email Here are some examples of the techniques i used Predict the trade based on the description on the home-page using machine learning (e.g. if the word electrical is common on a home-page, predict that it\u2019s an electrical sub) Extract basic info (e.g. location, emails, phone numbers) using web-scraping Look for specific keywords like MWBE, union using web-scraping The output is a clean excel sheet with every sub in our market, enriched with key information. (C) Get contact information Armed with a clean sublist, the next challenge was to find the decision maker at each company and his or her contact information. Unfortunately, most websites don\u2019t list the chief estimator\u2019s contact information and just have generic emails like [info@subcontractor.com](mailto:info@subcontractor.com). In our experience, if you just blindly send a bid to a generic email you\u2019ll never get a response. To start, I used a tool called phantom buster which would allow me to extract employee and job-titles from a company\u2019s linkedin. Then I used a software script to guess each person\u2019s email and use third-party email verification to confirm the email is correct. By using this process, we now had direct contacts at each company and their email. (D) Fill in the data gaps with programmatic emails However, not everyone in construction is on linkedin, let alone chief estimators. So for the companies where we didn\u2019t find the right estimating decision maker, we would directly email a contact at the company with a templated email asking for the decision maker. In this email, I would add a bit of salesmanship (introduce myself, introduce the project and the estimated revenue). Most people would manually write every email, but we used tools like Lemlist that basically allow you to send a personal-email from your domain, but do this in a programmatic way. This allows you to email 100s of companies simultaneously. We gathered these responses and added it to our list of contacts. For the companies that never responded, we\u2019d directly call and ask for the decision maker. Impact for GC friend In summary, we built a tool that breaks down generating sublists into a few components. Finding all subs Vetting subs programmatically using their website Finding up-to-date contact info for these subs Reaching out via emails & calls for info that we\u2019re missing Per my GC friend, this tool has given them a way to generate fast-sublists so they can be more strategic about getting bid coverage since they\u2019re no longer blindly calling every sub, but just prioritizing the ones that are a good fit using the data we\u2019ve scraped. For the GCs, I\u2019m curious to hear how you guys generate sublists at your company because I\u2019m looking to improve this tool.",
+      "gold": "general_contractor_precon_coordinator",
+      "predicted": "general_contractor_precon_coordinator"
+    }
+  ]
+}

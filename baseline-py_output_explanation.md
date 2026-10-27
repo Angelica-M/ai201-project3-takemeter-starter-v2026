@@ -151,12 +151,36 @@ The prediction's reasoning (skew caps the result) was right, and its number was 
 
 ## 10. What it means for the project
 
-- **The baseline is a weak control.** It can be beaten on accuracy by a model that mostly says "venting". So "beat the baseline" is a low bar here, and I should lean on the majority-label guess and macro F1 as the stricter tests.
+- **The definitions-based baseline is a weak control.** It can be beaten on accuracy by a model that mostly says "venting", so "beat the baseline" is a low bar here, and I should lean on the majority-label guess and macro F1 as the stricter tests. The bare-names baseline (section 11) is a much stronger control and the trained model does not beat it.
 - **The main problem is the data, not the model.** 5 labels have no posts, 3 have no training posts, 3 more have exactly one training post, and two labels hold 51% of the data. With 142 training posts spread over 21 labels, the model has little to learn from for most labels.
 - **Likely fixes** (for the unit 6 improvement step, not yet done): collect more posts for the thin labels, merge or drop labels that cannot be learned, make the split stratified, and rewrite the definitions that attract the wrong posts.
 - **Preliminary read on my criteria** (one seed, so not a verdict): overall accuracy 0.258 is far under Criterion 1's 0.65, and all five technical labels in Criterion 2 scored 0.000 for the trained model. The three-seed run in the notebook's section 6 is what the criteria are judged on.
 
-## 11. Limits of this result
+## 11. A second run on purpose: what were my definitions worth?
+
+`baseline.py` falls back to **bare label names** when it can't find a definitions file. The course suggests running it both ways once, because the gap between the two accuracies is what the definitions were worth, measured instead of assumed. I ran it a second time, pointing `--definitions` at a file that doesn't exist and saving to a separate file so the first results weren't overwritten:
+
+```
+python baseline.py --data data/labels.csv --definitions no_definitions_on_purpose.txt --out baseline_results_bare_names.json
+```
+
+| Baseline run | Accuracy | Macro F1 (16 labels) |
+|---|---|---|
+| With my definitions (`baseline_results.json`, the one I report) | 0.129 (4/31) | 0.060 |
+| Bare label names (`baseline_results_bare_names.json`) | **0.355 (11/31)** | **0.215** |
+| My trained model, for reference | 0.258 (8/31) | 0.042 over the same 16 labels (0.061 as printed) |
+
+**What it shows**
+- My definitions made the baseline **worse**, not better: 0.355 down to 0.129, about 7 posts on a 31-post test set. The two runs agreed on only 4 of 31 posts.
+- With definitions, the baseline's guesses collapsed onto `software_vendor_sales_representative` (19 of 31). With bare names they spread out: `general_contractor_precon_coordinator` 9, `general_construction_non_mechanical` 5, `bid_strategy_scope_gaps_gc_relations` 5. Seven labels scored above zero F1 instead of three.
+- A plausible (untested) reason: a zero-shot model judges "This post is {text}" by how well the post supports that sentence. A short label like `general_construction_non_mechanical` gives it a clean idea to test; a long definition full of shared vocabulary (software, bids, quotes) matches many posts for the wrong reasons. If so, shorter, more distinctive definitions would help.
+
+**What it changes**
+- The README's headline baseline is still the definitions run, because that is what the prediction and the table were built on, and the README says so.
+- It changes the story: the bare-names baseline beats my trained model (0.355 against 0.258 on accuracy, 0.215 against 0.042 on macro F1). So the trained model beat only the weaker, definitions-based baseline. For criteria and the improvement step, the stronger bare-names number is the more honest bar to compare against.
+- Caveat: 31 posts is a small sample, so the exact figures could move on another split, but a 7-post gap is more than one lucky guess.
+
+## 12. Limits of this result
 
 - **31 test posts, one seed.** One post is 3.2 points of accuracy. A different seed gives a different test split and different numbers, which is why unit 6 runs three seeds.
 - **The split was not stratified.** Several labels have a single post, so the notebook fell back to a plain random split. Some labels have zero test posts and cannot be measured at all.
