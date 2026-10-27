@@ -491,16 +491,6 @@ Both models scored the same 31 held-out posts in `test_split.csv` (seed 42). The
 | F1 — `specialized_mechanical_estimating_databases` | 0.000 | 0.000 | +0.000 |
 | F1 — `unrelated` | 0.000 | 0.000 | +0.000 |
 
-**What my definitions were worth (the baseline run twice, on purpose):** the baseline above is the run that uses my 21 definitions from `label_definitions.txt`, and it is the baseline I report. I also ran it once with no definitions file, so it fell back to bare label names (`python baseline.py --data data/labels.csv --definitions no_definitions_on_purpose.txt --out baseline_results_bare_names.json`), on the same 31 posts:
-
-| Baseline run | Overall accuracy | Macro F1 (over the 16 labels in my data) |
-|---|---|---|
-| With my definitions (reported above) | 0.129 (4/31) | 0.060 |
-| Bare label names | 0.355 (11/31) | 0.215 |
-| My trained model (for reference) | 0.258 (8/31) | 0.061 as printed (0.042 over the same 16 labels) |
-
-So my definitions did not help the baseline, they cost it 0.226 of accuracy (11 posts versus 4 right). With definitions it predicted `software_vendor_sales_representative` for 19 of 31 posts; with bare names its guesses were spread across `general_contractor_precon_coordinator` (9), `general_construction_non_mechanical` (5), `bid_strategy_scope_gaps_gc_relations` (5) and others, and it gave `enterprise_erp_bidding_platforms` an F1 of 1.0 (on a single test post). The two runs agreed on only 4 of the 31 posts. A plausible reason, which I have not tested, is that my long definitions make the zero-shot model score on shared vocabulary instead of on the label's meaning. With 31 posts, 11 versus 4 correct is a large gap but still a small sample. Because the bare-names baseline is stronger than my trained model on both accuracy and macro F1, the trained model beats only the definitions-based baseline, not the bare-names one. The full results of the bare-names run are in `baseline_results_bare_names.json`.
-
 **What I predicted before I looked:**
 <!-- Milestone 1 asks you to write this BEFORE seeing the trained numbers. A
      prediction made afterwards isn't one. -->
