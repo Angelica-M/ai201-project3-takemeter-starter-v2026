@@ -468,12 +468,28 @@ One disclosure about timing: Criterion 2 was reworded (which labels it covers an
 <!-- Both models on the same posts. `python baseline.py --trained results.json`
      prints this table for you. -->
 
+Both models scored the same 31 held-out posts in `test_split.csv` (seed 42). The baseline is zero-shot `facebook/bart-large-mnli` using my 21 label definitions and chose among the 16 labels present in my data; the trained model is the fine-tuned `distilbert-base-uncased` from the notebook. Output of `python baseline.py --data data/labels.csv --trained results.json`:
+
 | Measure | Baseline | Trained | Difference |
 |---|---|---|---|
-| Overall accuracy |  |  |  |
-| Macro F1 |  |  |  |
-| F1 — `label_one` |  |  |  |
-| F1 — `label_two` |  |  |  |
+| Overall accuracy | 0.129 | 0.258 | +0.129 |
+| Macro F1 | 0.060 | 0.061 | +0.001 |
+| F1 — `bid_strategy_scope_gaps_gc_relations` | 0.000 | 0.000 | +0.000 |
+| F1 — `career_pathing_compensation_hiring` | 0.000 | 0.308 | +0.308 |
+| F1 — `commercial_institutional_industrial` | 0.000 | 0.000 | +0.000 |
+| F1 — `emerging_ai_automation_tools` | 0.000 | 0.000 | +0.000 |
+| F1 — `enterprise_erp_bidding_platforms` | 0.000 | 0.000 | +0.000 |
+| F1 — `general_construction_non_mechanical` | 0.000 | 0.000 | +0.000 |
+| F1 — `general_contractor_precon_coordinator` | 0.500 | 0.000 | -0.500 |
+| F1 — `general_pdf_cad_digitizers` | 0.000 | 0.000 | +0.000 |
+| F1 — `industry_venting_operational_burnout` | 0.364 | 0.364 | +0.000 |
+| F1 — `multi_family_residential_tract_housing` | 0.000 | 0.000 | +0.000 |
+| F1 — `public_works_prevailing_wage_bidding` | 0.000 | 0.000 | +0.000 |
+| F1 — `senior_b2b_mechanical_estimator_chief_estimator` | 0.000 | 0.000 | +0.000 |
+| F1 — `software_benchmarking_technical_workflow` | 0.000 | 0.000 | +0.000 |
+| F1 — `software_vendor_sales_representative` | 0.100 | 0.000 | -0.100 |
+| F1 — `specialized_mechanical_estimating_databases` | 0.000 | 0.000 | +0.000 |
+| F1 — `unrelated` | 0.000 | 0.000 | +0.000 |
 
 **What I predicted before I looked:**
 <!-- Milestone 1 asks you to write this BEFORE seeing the trained numbers. A
