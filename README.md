@@ -520,31 +520,89 @@ I predict the fine-tuned LoRA model will achieve an overall test accuracy betwee
 <!-- Five criteria across three seeds. The notebook's section 6 prints the
      spread table; the Target and Verdict columns are yours. -->
 
+**Where and how it ran:** device `cpu` (CPU, torch 2.14.1+cpu, Windows 11 machine, no GPU), the same for all three seeds, and recorded inside every seed's entry in `results_three_seeds_before.json`. Seeds 42, 7 and 2024 were trained in one run of section 6 (`RUN_LABEL = "before"`), about 3.6 minutes in total, with the unchanged settings: 3 epochs, learning rate 2e-5, batch size 16, 128 tokens. Seed 42 reproduced the unit 5 run exactly (accuracy 0.258, macro F1 0.061).
+
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Overall accuracy | at least 0.65 on every seed | 0.258 | 0.226 | 0.290 |  |
+| 2. Macro F1 over the 5 core technical labels | at least 0.60 on every seed, standard deviation under 0.05 | 0.000 | 0.000 | 0.000 |  |
+| 3. Precision of `general_construction_non_mechanical` | at least 0.75 on every seed | 0.000 (never predicted; 4 test posts) | 0.000 (never predicted; 4 test posts) | 0.000 (never predicted; 5 test posts) |  |
+| 4. Cohen's kappa against staff labels (30 posts) | at least 0.70 | not run yet (needs the agreement check) | n/a | n/a |  |
+| 5. Precision when confidence is at least 0.80 | at least 0.85 on every seed | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) |  |
+
+**The spread across seeds.** Accuracy was 0.258, 0.226 and 0.290, a spread of 0.065 (6.5 points), which is under the notebook's "more than about ten points" warning line, so by that rule alone the measure is not flagged as unstable. It still hides a bigger problem. The model was close to a constant guesser on every seed:
+
+- Seed 42 predicted only `industry_venting_operational_burnout` (25 posts) and `career_pathing_compensation_hiring` (6).
+- Seed 7 predicted `career_pathing_compensation_hiring` for 28 posts and `industry_venting_operational_burnout` for 3.
+- Seed 2024 predicted `career_pathing_compensation_hiring` for **all 31** posts, so its 0.290 is just the 9 career posts that happened to land in that test split.
+
+So accuracy moved with which of the two largest labels a seed favoured and how many posts of it the split held, not with anything the model learned. Macro F1 barely moves (0.056 to 0.061) only because it is close to zero everywhere: only those two labels ever score, and `industry_venting_operational_burnout` scored 0.000 in seed 2024. The model's confidence tells the same story: the average winning probability was only about 0.09 to 0.12 whether it was right or wrong (uniform guessing over 21 labels would be 0.048), and no prediction on any seed reached 0.80, so Criterion 5 has nothing to measure. My reading, not yet tested, is that a 204-post dataset this lopsided, with only 3 epochs of training, taught the model label frequencies instead of post content. That is a diagnosis about the dataset and the training run, not a mistake in running it.
+
+**Full spread table, as printed by the notebook (section 6):**
+
+| Measure | Seed 42 | Seed 7 | Seed 2024 | Spread |
+|---|---|---|---|---|
+| Overall accuracy | 0.258 | 0.226 | 0.290 | 0.065 |
+| Macro F1 | 0.061 | 0.059 | 0.056 | 0.005 |
+| F1 — `division_23_full_mechanical_hvac` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `sub_trade_specialty_sheet_metal_vs_hydronics` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `mep_package_mechanical_plumbing_electrical` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `general_construction_non_mechanical` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `general_pdf_cad_digitizers` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `specialized_mechanical_estimating_databases` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `enterprise_erp_bidding_platforms` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `emerging_ai_automation_tools` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `commercial_institutional_industrial` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `multi_family_residential_tract_housing` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `service_replacement_retrofit_bidding` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `public_works_prevailing_wage_bidding` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `software_benchmarking_technical_workflow` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `bid_strategy_scope_gaps_gc_relations` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `career_pathing_compensation_hiring` | 0.308 | 0.250 | 0.450 | 0.200 |
+| F1 — `industry_venting_operational_burnout` | 0.364 | 0.462 | 0.000 | 0.462 |
+| F1 — `senior_b2b_mechanical_estimator_chief_estimator` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `general_contractor_precon_coordinator` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `field_tech_residential_installer_apprentice` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `software_vendor_sales_representative` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `unrelated` | 0.000 | 0.000 | 0.000 | 0.000 |
 
 ### Confusion matrix
 
 <!-- ⚠️ TYPED AS A MARKDOWN TABLE. The notebook prints one ready to paste.
      An image of a matrix earns nothing. -->
 
-| true \ predicted |  |  |  |
-|---|---|---|---|
-| **** |  |  |  |
-| **** |  |  |  |
-| **** |  |  |  |
+Seed 42 (the matrix the notebook's section 7 prints; rows are true labels, columns are the model's guesses). The matrices for seeds 7 and 2024 are in `results_three_seeds_before.json` under `confusion`.
+
+| true \ predicted | division_23_full_mechanical_hvac | sub_trade_specialty_sheet_metal_vs_hydronics | mep_package_mechanical_plumbing_electrical | general_construction_non_mechanical | general_pdf_cad_digitizers | specialized_mechanical_estimating_databases | enterprise_erp_bidding_platforms | emerging_ai_automation_tools | commercial_institutional_industrial | multi_family_residential_tract_housing | service_replacement_retrofit_bidding | public_works_prevailing_wage_bidding | software_benchmarking_technical_workflow | bid_strategy_scope_gaps_gc_relations | career_pathing_compensation_hiring | industry_venting_operational_burnout | senior_b2b_mechanical_estimator_chief_estimator | general_contractor_precon_coordinator | field_tech_residential_installer_apprentice | software_vendor_sales_representative | unrelated |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **division_23_full_mechanical_hvac** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **sub_trade_specialty_sheet_metal_vs_hydronics** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **mep_package_mechanical_plumbing_electrical** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **general_construction_non_mechanical** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 4 | 0 | 0 | 0 | 0 | 0 |
+| **general_pdf_cad_digitizers** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **specialized_mechanical_estimating_databases** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **enterprise_erp_bidding_platforms** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **emerging_ai_automation_tools** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 |
+| **commercial_institutional_industrial** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **multi_family_residential_tract_housing** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **service_replacement_retrofit_bidding** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **public_works_prevailing_wage_bidding** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 |
+| **software_benchmarking_technical_workflow** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **bid_strategy_scope_gaps_gc_relations** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **career_pathing_compensation_hiring** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 5 | 0 | 0 | 0 | 0 | 0 |
+| **industry_venting_operational_burnout** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 6 | 0 | 0 | 0 | 0 | 0 |
+| **senior_b2b_mechanical_estimator_chief_estimator** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **general_contractor_precon_coordinator** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **field_tech_residential_installer_apprentice** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **software_vendor_sales_representative** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **unrelated** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 **My biggest off-diagonal number, and what it means:**
 <!-- Not "the model made mistakes" — WHICH boundary it didn't learn, and which
      direction. "7 real analysis posts were called hot_take and only 3 went the
      other way" is a direction, not just an error rate. -->
 
-
+In seed 42, 5 real `career_pathing_compensation_hiring` posts were called `industry_venting_operational_burnout` and only 2 went the other way, but because that seed called 25 of the 31 posts venting (and seeds 7 and 2024 called almost everything career instead), this direction reflects whichever of the two largest labels a seed happened to favour, not a learned career-versus-venting boundary.
 
 ---
 
