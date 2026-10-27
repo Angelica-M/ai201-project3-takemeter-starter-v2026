@@ -479,6 +479,8 @@ One disclosure about timing: Criterion 2 was reworded (which labels it covers an
 <!-- Milestone 1 asks you to write this BEFORE seeing the trained numbers. A
      prediction made afterwards isn't one. -->
 
+I predict the fine-tuned LoRA model will achieve an overall test accuracy between 0.35 and 0.45—comfortably outperforming the baseline score of 0.129 and the majority-class guess of 0.258, yet capped by severe data skew. While high-frequency categories like `industry_venting_operational_burnout` (36 train) and `career_pathing_compensation_hiring` (34 train) will be learned robustly by the adapter, the model will completely fail on the three zero-train labels (`public_works_prevailing_wage_bidding`, `software_vendor_sales_representative`, and `commercial_institutional_industrial`) that hold 4 test instances. Additionally, the model's 128-token truncation limit will cut off longer posts (where the 90th percentile spans ~1,880 characters), exacerbating classification errors on fuzzy category boundaries like operational venting versus bid strategy scope gaps where semantic score gaps are already narrow.
+
 **What the gap actually means:**
 <!-- If the baseline matched your trained model, your fine-tuning added
      nothing — and that is a real finding, not a failure. Say it plainly. -->
