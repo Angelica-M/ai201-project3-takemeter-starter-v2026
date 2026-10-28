@@ -763,13 +763,83 @@ There is no disagreement pattern, because there were no disagreements. What I ca
 
 ### Run Log — After
 
+**Where and how it ran:** the same device (`cpu`, torch 2.14.1+cpu), the same three seeds (42, 7, 2024) and the same 204 posts as the before run. The one difference is `EPOCHS = 15` instead of 3, with learning rate 2e-5, batch size 16 and 128 tokens unchanged. Written to `results_three_seeds_after.json` (`RUN_LABEL = "after"`). The three seeds took about 934 seconds (15.6 minutes), against about 3.6 minutes before.
+
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Overall accuracy | at least 0.65 on every seed | 0.419 | 0.419 | 0.548 | **MISSED** |
+| 2. Macro F1 over the 5 core technical labels | at least 0.60 on every seed, standard deviation under 0.05 | 0.080 (95% interval 0.000 to 0.222) | 0.213 (0.000 to 0.433) | 0.222 (0.057 to 0.444); standard deviation across seeds 0.080 | **MISSED** |
+| 3. Precision of `general_construction_non_mechanical` | at least 0.75 on every seed | 1.000 (1 of 1 predicted right; 4 test posts) | 1.000 (2 of 2; 4 test posts) | 0.500 (2 of 4; 5 test posts) | **MISSED** |
+| 4. Cohen's kappa against staff labels (30 posts) | at least 0.70 | 1.000 (30 of 30 agreed with staff; not a model measure, so unchanged by retraining) | n/a | n/a | **MET** (revised wording) |
+| 5. Precision when confidence is at least 0.80 | at least 0.85 on every seed | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) | **MISSED** |
+
+**Before and after, side by side** (the before numbers are from `results_three_seeds_before.json`, the after numbers from `results_three_seeds_after.json`):
+
+| Measure | Before: seed 42 / 7 / 2024 | After: seed 42 / 7 / 2024 |
+|---|---|---|
+| Overall accuracy | 0.258 / 0.226 / 0.290 | 0.419 / 0.419 / 0.548 |
+| Spread of accuracy across seeds | 0.065 | 0.129 |
+| Macro F1 over all 21 labels (as the notebook prints it) | 0.061 / 0.059 / 0.056 | 0.144 / 0.178 / 0.299 |
+| Macro F1 over the 5 core labels (Criterion 2) | 0.000 / 0.000 / 0.000 | 0.080 / 0.213 / 0.222 |
+| Precision of `general_construction_non_mechanical` | 0.000 (never predicted) on all three | 1.000 / 1.000 / 0.500 |
+| Number of different labels the model predicted | 2 / 2 / 1 | 4 / 4 / 4 |
+| Predictions at confidence 0.80 or more | 0 / 0 / 0 | 0 / 0 / 0 |
+| Average confidence when right | 0.088 / 0.100 / 0.124 | 0.264 / 0.367 / 0.369 |
+| Average confidence when wrong | 0.087 / 0.101 / 0.120 | 0.183 / 0.253 / 0.282 |
+
+**Full spread table for the after run, as printed by the notebook (section 6):**
+
+| Measure | Seed 42 | Seed 7 | Seed 2024 | Spread |
+|---|---|---|---|---|
+| Overall accuracy | 0.419 | 0.419 | 0.548 | 0.129 |
+| Macro F1 | 0.144 | 0.178 | 0.299 | 0.155 |
+| F1 — `division_23_full_mechanical_hvac` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `sub_trade_specialty_sheet_metal_vs_hydronics` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `mep_package_mechanical_plumbing_electrical` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `general_construction_non_mechanical` | 0.400 | 0.667 | 0.444 | 0.267 |
+| F1 — `general_pdf_cad_digitizers` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `specialized_mechanical_estimating_databases` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `enterprise_erp_bidding_platforms` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `emerging_ai_automation_tools` | 0.000 | 0.400 | 0.667 | 0.667 |
+| F1 — `commercial_institutional_industrial` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `multi_family_residential_tract_housing` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `service_replacement_retrofit_bidding` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `public_works_prevailing_wage_bidding` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `software_benchmarking_technical_workflow` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `bid_strategy_scope_gaps_gc_relations` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `career_pathing_compensation_hiring` | 0.625 | 0.320 | 0.727 | 0.407 |
+| F1 — `industry_venting_operational_burnout` | 0.560 | 0.750 | 0.556 | 0.194 |
+| F1 — `senior_b2b_mechanical_estimator_chief_estimator` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `general_contractor_precon_coordinator` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `field_tech_residential_installer_apprentice` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `software_vendor_sales_representative` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `unrelated` | 0.000 | 0.000 | 0.000 | 0.000 |
+
+**Confusion matrix, after run, seed 42** (the matrix the notebook's section 7 prints; rows are true labels, columns are the model's guesses). The matrices for seeds 7 and 2024 are in `results_three_seeds_after.json` under `confusion`.
+
+| true \ predicted | division_23_full_mechanical_hvac | sub_trade_specialty_sheet_metal_vs_hydronics | mep_package_mechanical_plumbing_electrical | general_construction_non_mechanical | general_pdf_cad_digitizers | specialized_mechanical_estimating_databases | enterprise_erp_bidding_platforms | emerging_ai_automation_tools | commercial_institutional_industrial | multi_family_residential_tract_housing | service_replacement_retrofit_bidding | public_works_prevailing_wage_bidding | software_benchmarking_technical_workflow | bid_strategy_scope_gaps_gc_relations | career_pathing_compensation_hiring | industry_venting_operational_burnout | senior_b2b_mechanical_estimator_chief_estimator | general_contractor_precon_coordinator | field_tech_residential_installer_apprentice | software_vendor_sales_representative | unrelated |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **division_23_full_mechanical_hvac** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **sub_trade_specialty_sheet_metal_vs_hydronics** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **mep_package_mechanical_plumbing_electrical** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **general_construction_non_mechanical** | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **general_pdf_cad_digitizers** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **specialized_mechanical_estimating_databases** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **enterprise_erp_bidding_platforms** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **emerging_ai_automation_tools** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **commercial_institutional_industrial** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **multi_family_residential_tract_housing** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **service_replacement_retrofit_bidding** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **public_works_prevailing_wage_bidding** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 |
+| **software_benchmarking_technical_workflow** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| **bid_strategy_scope_gaps_gc_relations** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 |
+| **career_pathing_compensation_hiring** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 2 | 0 | 0 | 0 | 0 | 0 |
+| **industry_venting_operational_burnout** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 7 | 0 | 0 | 0 | 0 | 0 |
+| **senior_b2b_mechanical_estimator_chief_estimator** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **general_contractor_precon_coordinator** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **field_tech_residential_installer_apprentice** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **software_vendor_sales_representative** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **unrelated** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 **Did it help, and how do I know:**
 
