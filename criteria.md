@@ -51,7 +51,7 @@ whether you hit them:
 
 ---
 
-Note that this `criteria.md` file covers 5 robust, domain-specific acceptance areas across this 21-label (category) dataset (204 total examples, averaging ~10 examples per label). Each criterion specifies a clear metric and threshold, along with context-specific reasoning tailored to the taxonomy and dataset constraints of the TakeMeter LoRA classifier on `r/estimators`.
+Note that this `criteria.md` file covers 5 robust, domain-specific acceptance areas across this 21-label (category) dataset (204 total examples, averaging ~10 examples per label). Each criterion specifies a clear metric and threshold, along with context-specific reasoning tailored to the taxonomy and dataset constraints of the TakeMeter classifier (a fully fine-tuned `distilbert-base-uncased`; no LoRA is used) on `r/estimators`.
 
 ---
 
@@ -59,7 +59,7 @@ Note that this `criteria.md` file covers 5 robust, domain-specific acceptance ar
 
 Across all three evaluation seeds, the overall test-set classification accuracy across all 21 labels (categories) must reach at least **0.65**.
 
-**Why this target:** Random guessing across 21 distinct labels (categories) yields an expected baseline accuracy of only about 0.048 (4.8%). Achieving 0.65 proves that the LoRA adapter successfully learned high-level construction domain terminology (such as SMACNA standards, MCAA labor factors, and Div 23 scope boundaries) rather than making arbitrary predictions, while leaving a realistic error buffer for a small 204-post dataset distributed over 21 fine-grained labels (categories).
+**Why this target:** Random guessing across 21 distinct labels (categories) yields an expected baseline accuracy of only about 0.048 (4.8%). Achieving 0.65 proves that the fine-tuned model successfully learned high-level construction domain terminology (such as SMACNA standards, MCAA labor factors, and Div 23 scope boundaries) rather than making arbitrary predictions, while leaving a realistic error buffer for a small 204-post dataset distributed over 21 fine-grained labels (categories).
 
 * **Reason it might turn out too easy:** High-frequency, easily recognizable categories like `general_pdf_cad_digitizers` (distinguished by obvious software names like Bluebeam or PlanSwift) or `industry_venting_operational_burnout` could dominate the sample distribution and drag the overall average up even if subtle technical trade classes struggle.
 * **Reason it might turn out too hard:** Semantic overlaps between adjacent categories—such as distinguishing `sub_trade_specialty_sheet_metal_vs_hydronics` from a comprehensive `division_23_full_mechanical_hvac` post—could cause widespread misclassifications across smaller categories, pulling overall accuracy below 0.65 across multiple seeds.
@@ -92,7 +92,11 @@ The precision for the negative/non-mechanical filter label (`general_constructio
 
 The Cohen's Kappa ($\kappa$) agreement score between two independent annotators on a sample of 30 held-out posts must be at least **0.70**.
 
-**Why this target:** Because fine-grained taxonomy distinctions (like distinguishing `software_benchmarking_technical_workflow` from `specialized_mechanical_estimating_databases`) rely on subtle context, human annotation must be demonstrably consistent before model performance can be measured. A Kappa score of 0.70 ensures high inter-rater reliability, proving the rulebook is deterministic enough for a LoRA model to emulate.
+**Why this target:** Because fine-grained taxonomy distinctions (like distinguishing `software_benchmarking_technical_workflow` from `specialized_mechanical_estimating_databases`) rely on subtle context, human annotation must be demonstrably consistent before model performance can be measured. A Kappa score of 0.70 ensures high inter-rater reliability, proving the rulebook is deterministic enough for a fine-tuned classifier to emulate.
+
+> **Revised in unit 6:** Cohen's kappa between me and the course staff on the 30 posts in `data/staff_posts.csv`, labelled under the staff taxonomy (`analysis`, `hot_take`, `reaction`), must be at least **0.70**. Checked with `python agreement.py` and `python kappa.py`.
+>
+> **Why revised:** the original wording ("two independent annotators on 30 held-out posts") could not be measured. My held-out posts have one label each, written by Gemini and checked by me, and there is no second human annotator on them. The staff set is the only place where a second labeller exists. This is a different instrument from the original: it measures how consistently I apply a written rulebook, not whether my 21 HVAC labels are consistent. The target stays at 0.70.
 
 * **Reason it might turn out too easy:** Annotators following the strict decision rules (e.g., flagging any post mentioning MCAA labor units or fitting auto-assemblies specifically as `specialized_mechanical_estimating_databases`) will easily agree on clear-cut software and trade posts.
 * **Reason it might turn out too hard:** Distinguishing poster intent in short or ambiguous Reddit posts (such as telling whether a poster is a `senior_b2b_mechanical_estimator_chief_estimator` versus a `general_contractor_precon_coordinator` when both ask about bid-leveling) relies heavily on subjective interpretation.
@@ -106,7 +110,7 @@ When the model outputs a prediction confidence probability $\ge 0.80$, its preci
 **Why this target:** Mechanical estimators using TakeMeter to sort bid opportunities need to trust high-confidence model tags without double-checking every post. Requiring 85% precision on high-confidence predictions ensures that when the model expresses high certainty, its output is trustworthy enough to automate post tagging in preconstruction workflows.
 
 * **Reason it might turn out too easy:** The model may naturally reserve probabilities above 0.80 for obvious, single-topic posts containing explicit brand names or clear keywords (e.g., `Trimble AutoBid` or `Davis-Bacon`), where classification is nearly unambiguous.
-* **Reason it might turn out too hard:** Small-scale LoRA fine-tuning on a 204-example dataset can lead to overconfidence (calibration drift), where the softmax layer outputs high probabilities ($\ge 0.80$) even on misclassified edge cases.
+* **Reason it might turn out too hard:** Small-scale fine-tuning on a 204-example dataset can lead to overconfidence (calibration drift), where the softmax layer outputs high probabilities ($\ge 0.80$) even on misclassified edge cases.
 
 ---
 
@@ -157,7 +161,9 @@ Note for Criterion 5: `results.json` from the first single run (written before t
      attempted. That's where the points are.
      ───────────────────────────────────────────────────────────────────────── -->
 
-# Low-Rank Adaptation (LoRA) Concepts' Explanations
+# Training and Evaluation Concepts (written about LoRA; background only)
+
+> **Note:** this project does **not** use LoRA. It fully fine-tunes `distilbert-base-uncased` (see `DistilBERT_LoRA_and_full_fine_tuning_explained.md`). The explanations below were written with LoRA in mind, so read every "LoRA" in them as general background on fine-tuning. The ideas of evaluation seed, learning rate, F1, softmax and Cohen's kappa apply to this project as they are. **LoRA rank does not apply**: there are no adapter matrices here. One more difference: the learning-rate section says LoRA can use a higher rate; this project's full fine-tune uses 2e-5.
 
 ## Evaluation Seed, LoRA Rank, and Learning Rate
 
