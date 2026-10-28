@@ -846,6 +846,20 @@ There is no disagreement pattern, because there were no disagreements. What I ca
 <!-- If it didn't, say so. Relabelling that didn't help is a genuinely
      interesting result and earns full credit. -->
 
+**In one sentence: it helped, partly. Training for 15 epochs instead of 3 lifted accuracy on every seed (0.258, 0.226, 0.290 to 0.419, 0.419, 0.548) and made the model predict four labels instead of one or two, but it did not change a single verdict: Criteria 1, 2, 3 and 5 are still MISSED and Criterion 4 is still MET.**
+
+**What the numbers say:**
+
+- **Accuracy rose on all three seeds, by 0.16 to 0.26.** Before, the model was at or below the majority-class guess; now it is above it on every seed. That is the first evidence in this project that it learned something from post content, and it supports the Milestone 4 diagnosis that the short run (about 33 optimizer steps) was part of the cause.
+- **It is not yet close to the target.** The best seed, 0.548, is still 0.10 below 0.65, and the other two are 0.23 below it.
+- **The five core labels moved off zero, but not reliably.** Macro F1 went from 0.000 to 0.080, 0.213 and 0.222. The 95% bootstrap intervals for seeds 42 and 7 still start at 0.000, so for those two seeds I cannot say the core-label improvement is more than luck in which posts landed in the test split. Only seed 2024's interval (0.057 to 0.444) stays above zero, and every interval is far below 0.60.
+- **`general_construction_non_mechanical` is now predicted, but on very few posts.** It was predicted 1, 2 and 4 times, giving precision 1.000, 1.000 and 0.500. The two 1.000 values rest on 1 and 2 predictions, so I do not read them as a pass. Seed 2024 misses the 0.75 target.
+- **Confidence now means something, but it never reaches 0.80.** Before, the model was equally unsure when right and wrong (about 0.09 to 0.12 either way). Now the average confidence is higher when it is right (0.26 to 0.37) than when it is wrong (0.18 to 0.28), and the most confident third of predictions was right 70% to 80% of the time. Still, no prediction reached 0.80, so Criterion 5 remains unmeasurable and counts as MISSED.
+- **The results got less stable.** Accuracy spread across seeds widened from 0.065 to 0.129, which the notebook flags as more than 10 points, a sign the data is too small or too lopsided for a steady measure.
+
+**Against my prediction.** I said the model would predict more than two labels on at least two seeds (yes: 4, 4 and 4), accuracy would land around 0.30 to 0.45 (two seeds at 0.419 did; seed 2024 at 0.548 was higher than I expected), core-label macro F1 would leave 0.000 but stay far below 0.60 (yes), Criterion 1 would stay MISSED (yes), and some predictions would reach 0.80 (no, none did). I got the direction right and the confidence part wrong.
+
+**What this does not show.** It was one change tested once per seed on a 31-post test split, so the size of the gain is uncertain even though all three seeds moved the same way. I did not test whether 15 epochs is the right number: I did not look at validation loss to see whether more epochs would help further or start to overfit, and I did not try a different learning rate. And the model still predicts only four of the 21 labels, mostly `career_pathing_compensation_hiring` and `industry_venting_operational_burnout`. That is what I expected if the data, with 12 of 21 labels having 3 or fewer posts, is the remaining limit. Training longer fixed part of the problem. It did not fix the part the data causes.
 
 
 ---
