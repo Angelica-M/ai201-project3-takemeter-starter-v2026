@@ -868,6 +868,21 @@ There is no disagreement pattern, because there were no disagreements. What I ca
 
 <!-- For each criterion still missed: what you'd do, and why you stopped. -->
 
+Four criteria are still MISSED after the improvement (1, 2, 3 and 5); Criterion 4 is MET and needs nothing. The reason I stopped is the same for all four, so I give it once and then say what I would do for each.
+
+**Why I stopped.** The course allows one change in this milestone, and I spent it on training length (EPOCHS 3 to 15), because that is what my diagnosis pointed at. The other fixes are bigger than one change: they need more data, and I have already reached the ceiling of what my scraper can collect. The three searches in `build_dataset.py` return about 204 unique r/estimators posts in total, and Reddit's public feed allows about one request per minute and caps a keyword search at roughly 105 posts. Getting more posts means a new source or a different scope for the dataset, which is a redesign and not a quick extra step. I am not claiming that I ran out of time. I stopped at the one-change limit and the data ceiling.
+
+**What I would do for each missed criterion:**
+
+| # | Still missed because | What I would do next | What I expect, and what could prove me wrong |
+|---|---|---|---|
+| 1. Accuracy (0.419 / 0.419 / 0.548, target 0.65) | The model still predicts only four of 21 labels, mostly `career_pathing_compensation_hiring` and `industry_venting_operational_burnout`. | First reduce the label set to the labels I can support: 12 of 21 labels have 3 or fewer posts, and 5 have none. Merge them into neighbours or drop them, and collect more posts for the ones that remain, aiming for at least 10 to 15 per label. Then retrain. | Accuracy should rise if the model's problem is thin labels. If it does not, the 15-epoch run was already limited by something else, such as the label definitions, and I would test that next. |
+| 2. Macro F1 over the 5 core labels (0.080 / 0.213 / 0.222, target 0.60) | Each core label has 10 to 23 posts and only 1 to 5 land in a test split, so each score is very noisy. The intervals for seeds 42 and 7 still start at 0.000. | The same data work, plus a larger test split (or repeated splits) so one wrong post does not move a label's F1 by 0.2 or more. | The target is measurable but may be out of reach until the dataset is much bigger. I would not lower it, because a missed number gets diagnosed and not renegotiated. |
+| 3. Precision of `general_construction_non_mechanical` (1.000 / 1.000 / 0.500, target 0.75) | Seed 2024 reached only 0.500, and the 1.000s rest on 1 and 2 predictions. | More posts of the non-HVAC trades, and a check of how many predictions the label gets per seed. Precision on fewer than about 5 predictions should be reported with its count and not as a pass. | This is the closest criterion to passing. If more data gives the label more predictions and precision stays at 0.75 or above on every seed, it would pass. |
+| 5. Precision at confidence 0.80 or more (no prediction reached 0.80, target 0.85) | The average winning probability is only 0.26 to 0.37 even when the model is right, so nothing gets near 0.80. | Train longer with validation loss tracked (which I did not do), try a different learning rate, and consider fewer labels, since a 21-way softmax spreads probability thinly across many labels. | I do not know that any of these gets confident predictions on 204 posts. If none does, this criterion may need a bigger dataset, not a different setting. |
+
+**The one check I would do first, before any of the above:** hand-label a random 30 of my own 204 posts without looking at Gemini's labels and compute kappa against them. That is the only way to find out whether my HVAC labels are consistent, and it decides whether more training data of the same kind would help or whether the label definitions need fixing first. I have not done it, so none of the rows above depends on its result.
+
 
 
 **The gap between what I meant my labels to capture and what the model
