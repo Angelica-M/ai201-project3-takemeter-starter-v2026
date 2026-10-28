@@ -524,11 +524,11 @@ I predict the fine-tuned LoRA model will achieve an overall test accuracy betwee
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1. Overall accuracy | at least 0.65 on every seed | 0.258 | 0.226 | 0.290 |  |
-| 2. Macro F1 over the 5 core technical labels | at least 0.60 on every seed, standard deviation under 0.05 | 0.000 | 0.000 | 0.000 |  |
-| 3. Precision of `general_construction_non_mechanical` | at least 0.75 on every seed | 0.000 (never predicted; 4 test posts) | 0.000 (never predicted; 4 test posts) | 0.000 (never predicted; 5 test posts) |  |
-| 4. Cohen's kappa against staff labels (30 posts) | at least 0.70 | 1.000 (30 of 30 agreed with staff; not a model measure, so the same for all seeds) | n/a | n/a |  |
-| 5. Precision when confidence is at least 0.80 | at least 0.85 on every seed | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) |  |
+| 1. Overall accuracy | at least 0.65 on every seed | 0.258 | 0.226 | 0.290 | **MISSED** |
+| 2. Macro F1 over the 5 core technical labels | at least 0.60 on every seed, standard deviation under 0.05 | 0.000 | 0.000 | 0.000 | **MISSED** |
+| 3. Precision of `general_construction_non_mechanical` | at least 0.75 on every seed | 0.000 (never predicted; 4 test posts) | 0.000 (never predicted; 4 test posts) | 0.000 (never predicted; 5 test posts) | **MISSED** |
+| 4. Cohen's kappa against staff labels (30 posts) | at least 0.70 | 1.000 (30 of 30 agreed with staff; not a model measure, so the same for all seeds) | n/a | n/a | **MET** (revised wording) |
+| 5. Precision when confidence is at least 0.80 | at least 0.85 on every seed | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) | **MISSED** |
 
 **The spread across seeds.** Accuracy was 0.258, 0.226 and 0.290, a spread of 0.065 (6.5 points), which is under the notebook's "more than about ten points" warning line, so by that rule alone the measure is not flagged as unstable. It still hides a bigger problem. The model was close to a constant guesser on every seed:
 
@@ -613,11 +613,13 @@ In seed 42, 5 real `career_pathing_compensation_hiring` posts were called `indus
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Overall accuracy | at least 0.65 on every seed | **MISSED** | The three seeds scored 0.258, 0.226 and 0.290. The best seed is 0.36 below the target, and no seed came close, so this is not a close call that the three-seed rule decides. Seed 42's 0.258 also equals the majority-class guess from the baseline section, so the model is not better than always naming the biggest label. |
+| 2 | Macro F1 over the 5 core technical labels | at least 0.60 on every seed, standard deviation under 0.05 | **MISSED** | Macro F1 over the five fixed labels is 0.000 on all three seeds, and `python macro_f1_ci.py` gives a 95% bootstrap interval of [0.000, 0.000] each time, so the interval is nowhere near 0.60 and this is a real miss, not a split too small to judge. The "standard deviation under 0.05" half is technically met (0.000), but only because the model never scores on any of the five labels, so I do not count it as a pass. |
+| 3 | Precision of `general_construction_non_mechanical` | at least 0.75 on every seed | **MISSED** | The model never predicted this label on any seed (it had 4, 4 and 5 test posts), so there were no predictions to be precise about: precision is 0 of 0, stored as 0.000. A target that says precision must be at least 0.75 is not shown to hold by an empty set, so I count it as missed. The generous reading, "nothing it predicted was wrong", would also pass a model that predicts nothing at all. |
+| 4 | Cohen's kappa against staff labels | at least 0.70 (my revised wording: me versus staff on the 30 staff posts) | **MET** | `python agreement.py` and `python kappa.py` gave 30 of 30 agreed and kappa 1.000 against the real staff key. The original wording (two annotators on 30 held-out posts) could not be measured, so this verdict is against the revised wording in `criteria.md`. It shows I applied the three-label staff rules consistently, not that my 21 HVAC labels are consistent. |
+| 5 | Precision when confidence is at least 0.80 | at least 0.85 on every seed | **MISSED** | No prediction reached 0.80 on any seed (n = 0), so there is no precision to compare with 0.85. The criterion exists so that confident tags can be trusted without checking each post, and a model that is never confident gives no tags to trust, so I count it as missed. The criterion's checking note says a seed with n = 0 "cannot be judged"; I am choosing MISSED over "cannot be judged" because the generous version of that phrase would leave an empty verdict where the target was not shown to hold. |
+
+Tally: 1 MET, 4 MISSED. The one MET is the criterion that does not depend on the model.
 
 **Diagnoses**
 
