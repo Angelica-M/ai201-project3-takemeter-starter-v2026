@@ -633,6 +633,28 @@ Tally: 1 MET, 4 MISSED. The one MET is the criterion that does not depend on the
      section is graded on whether you used it that way. -->
 
 
+Criterion 4 was met, so it needs no diagnosis. Criteria 1, 2, 3 and 5 are missed, and they share one root cause with different symptoms, so I diagnose that cause once and then say what it did to each criterion.
+
+**Root cause: a task the model cannot reach from this data and this training run, made worse by too few examples for most labels.** I am saying "cannot reach" and not "labels are bad" or "labels are hard", and here is how I know:
+
+- **It is a constant guesser, not a model that learned wrong boundaries.** Seed 42 predicted only two labels (`industry_venting_operational_burnout` 25 times, `career_pathing_compensation_hiring` 6), seed 7 predicted career 28 times and venting 3, and seed 2024 predicted career for all 31 test posts. Accuracy moved only with which big label a seed favoured, which is why the three accuracies (0.258, 0.226, 0.290) track how many career or venting posts each split held.
+- **Its probabilities are nearly flat.** The average winning probability was about 0.09 to 0.12 whether it was right or wrong, against 0.048 for a uniform guess over 21 labels. A model that had learned a wrong boundary would be confident and wrong. This one has not committed to anything.
+- **The data are very lopsided.** Of the 21 labels, 5 have no posts at all and 7 more have 3 or fewer (5 labels with 1 post, `public_works_prevailing_wage_bidding` with 2, `unrelated` with 3), so 12 of 21 labels cannot be learned or tested. The two biggest labels hold 104 of 204 posts (venting 55, career 49).
+- **The training run is very short.** About 173 posts in training at batch size 16 is 11 steps per epoch, so 3 epochs is about 33 optimizer steps at a learning rate of 2e-5. That count comes from the settings, not from a log. It is not many updates for a model whose 21-way classification head started random.
+- **Too few examples is not the whole story.** The five core labels in Criterion 2 have 10 to 23 posts each, and `general_construction_non_mechanical` has 23 (the third largest label), yet none was ever predicted. If data volume alone explained it, a label with 23 posts should show some signal. That points at the short training run too, but I have not tested it. It is a hypothesis for Milestone 5, not a finding.
+
+**Criterion 1 (accuracy 0.258 / 0.226 / 0.290, target 0.65).** Cause: the root cause above. Evidence: the accuracy equals what always guessing the biggest label scores (0.258, the majority-class figure from the baseline section), so the model learned no more than label frequency. Seed 7's 0.226 is below even that.
+
+**Criterion 2 (macro F1 over the five core labels 0.000 on every seed, target 0.60).** Cause: too few examples for the technical labels (10 to 23 posts, 1 to 4 in each test split) together with the under-trained run. Evidence: all five F1s are exactly 0.000 on all three seeds because the model never predicted any of the five. In seed 42's confusion matrix the true posts for these labels all went to `industry_venting_operational_burnout` (for example 4 `general_construction_non_mechanical`, 2 `emerging_ai_automation_tools`), the biggest label, not to a related one, so this is frequency collapse and not a confusion between two neighbouring labels. I cannot call any pair "genuinely hard" because a model that never predicts a label shows no pair confusion.
+
+**Criterion 3 (precision of `general_construction_non_mechanical`, 0.000, target 0.75).** Cause: the same under-training; this is not a "too few examples" case in the strict sense because the label has 23 posts. Evidence: it was never predicted (0 of 0), and in seed 42 all four of its test posts were called `industry_venting_operational_burnout`. The consequence for the use case is that the noise filter would pass every non-HVAC post through unflagged.
+
+**Criterion 5 (no prediction at or above 0.80, target 0.85 precision).** Cause: the same under-training, which here shows up as under-confidence, the opposite of the overconfidence my "too hard" note for this criterion predicted. Evidence: the average winning probability of 0.09 to 0.12 means the model never got near 0.80, so n = 0 on every seed.
+
+**What I have not shown.** I have not shown that more training would fix it, since I have not trained longer. I have not shown that my labels are consistent, which is what the next subsection addresses with the agreement report.
+
+
+
 
 ---
 
