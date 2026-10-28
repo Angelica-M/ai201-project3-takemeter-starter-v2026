@@ -83,6 +83,10 @@ The precision for the negative/non-mechanical filter label (`general_constructio
 
 **Why this target:** A primary utility of TakeMeter for a mechanical estimator is filtering out non-trade noise (such as concrete, framing, earthwork, or drywall posts). High precision (0.75) ensures that non-HVAC posts are correctly flagged so that actual mechanical scope discussions are not accidentally filtered out and lost to the user.
 
+> **Revised in unit 6:** The precision for `general_construction_non_mechanical` must be at least **0.75** on every seed, **and a seed on which the model never predicts this label counts as MISSED** (its precision is then 0 of 0, undefined, and is not read as a pass).
+>
+> **Why revised:** the original wording gave me no way to produce a verdict when the label is never predicted. On all three seeds the model never predicted it (it had 4, 4 and 5 test posts), so precision was 0 of 0. One reading, "nothing it predicted was wrong", would pass a model that predicts nothing, which defeats the filter's purpose. The 0.75 target is unchanged, and the verdict (MISSED) is the same under the original and the revised wording.
+
 * **Reason it might turn out too easy:** Non-mechanical trades utilize completely separate, highly distinct vocabulary (e.g., `rebar`, `yardage`, `pour`, `Div 3`, `Div 9`) that rarely overlaps with mechanical equipment or piping terms.
 * **Reason it might turn out too hard:** General Contractor preconstruction posts often list full-building trade packages in a single post (mentioning concrete, framing, and mechanical together), which can cause the model to falsely classify trade-relevant posts as general construction.
 
@@ -109,6 +113,10 @@ When the model outputs a prediction confidence probability $\ge 0.80$, its preci
 
 **Why this target:** Mechanical estimators using TakeMeter to sort bid opportunities need to trust high-confidence model tags without double-checking every post. Requiring 85% precision on high-confidence predictions ensures that when the model expresses high certainty, its output is trustworthy enough to automate post tagging in preconstruction workflows.
 
+> **Revised in unit 6:** When the model outputs a prediction confidence probability $\ge 0.80$, its precision on those predictions must be at least **0.85** on every seed, **and a seed with no prediction at or above 0.80 counts as MISSED** (its precision is undefined and is not read as a pass).
+>
+> **Why revised:** the original wording gave me no way to produce a verdict when nothing reaches 0.80. On all three seeds no prediction reached 0.80 (n = 0), so precision was undefined. Reading that as "nothing confident was wrong" would pass a model that is never confident, yet the criterion exists so that confident tags can be trusted, and a model that is never confident gives no tags to trust. This also replaces the "cannot be judged" wording in the "How each criterion is checked" table for n = 0. The 0.85 target is unchanged, and the verdict (MISSED) is the same under the original and the revised wording.
+
 * **Reason it might turn out too easy:** The model may naturally reserve probabilities above 0.80 for obvious, single-topic posts containing explicit brand names or clear keywords (e.g., `Trimble AutoBid` or `Davis-Bacon`), where classification is nearly unambiguous.
 * **Reason it might turn out too hard:** Small-scale fine-tuning on a 204-example dataset can lead to overconfidence (calibration drift), where the softmax layer outputs high probabilities ($\ge 0.80$) even on misclassified edge cases.
 
@@ -124,7 +132,7 @@ Run these in unit 6, after the notebook's section 6 has written `results_three_s
 | 2 | Macro F1 over the five core technical labels >= 0.60 on every seed, standard deviation < 0.05 | `python macro_f1_ci.py` (prints one macro F1 per seed with a 95% bootstrap interval, the mean, the spread and a verdict) | **Yes, `macro_f1_ci.py`**: averaging over a chosen label subset and bootstrapping is too fiddly by hand |
 | 3 | Precision of `general_construction_non_mechanical` >= 0.75 on every seed | `python -c "import json;print([round(r['per_label']['general_construction_non_mechanical']['precision'],3) for r in json.load(open('results_three_seeds_before.json'))])"`. A precision of 0.000 with support 0 means the label was never predicted, which is a finding, not a pass | No: the notebook already stores each label's precision |
 | 4 | Cohen's kappa >= 0.70 on the 30 staff posts | `python agreement.py`, then `python kappa.py` (prints kappa with a 95% bootstrap interval and a verdict) | **Yes, `kappa.py`**: `agreement.py` only reports the raw agreement rate, and kappa needs the full list of label pairs |
-| 5 | Precision >= 0.85 on predictions with confidence >= 0.80 on every seed | `python -c "import json;print([(r['high_confidence']['n_predictions'], r['high_confidence']['precision']) for r in json.load(open('results_three_seeds_before.json'))])"` prints (how many confident predictions, how many were right) per seed | No: the notebook's `evaluate()` now saves a `high_confidence` block in every results file. If `n_predictions` is 0 the seed cannot be judged, and with a small `n_predictions` the precision is noisy, so quote both |
+| 5 | Precision >= 0.85 on predictions with confidence >= 0.80 on every seed | `python -c "import json;print([(r['high_confidence']['n_predictions'], r['high_confidence']['precision']) for r in json.load(open('results_three_seeds_before.json'))])"` prints (how many confident predictions, how many were right) per seed | No: the notebook's `evaluate()` now saves a `high_confidence` block in every results file. If `n_predictions` is 0 the seed counts as MISSED (see the unit 6 revision under Criterion 5; the first version of this note said "cannot be judged"), and with a small `n_predictions` the precision is noisy, so quote both |
 
 Note for Criterion 5: `results.json` from the first single run (written before this block existed) does not have a `high_confidence` entry. Every three-seed file from section 6 does.
 
