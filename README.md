@@ -889,6 +889,8 @@ Four criteria are still MISSED after the improvement (1, 2, 3 and 5); Criterion 
 learned:**
 <!-- Two sentences. Your confusion matrix is the evidence. -->
 
+I meant the 21 labels to separate posts along five different axes (trade scope, software, project sector, post purpose and poster role), but in the after-run seed-42 matrix the model got 13 of 31 posts right and 12 of those 13 are `career_pathing_compensation_hiring` or `industry_venting_operational_burnout` posts, so what it actually learned is mostly one contrast between two post-purpose labels. It has no usable boundary for scope, sector or poster role, the axes an estimator would act on: 14 of its 18 mistakes in that matrix landed on those same two labels, and the other four went to `software_benchmarking_technical_workflow`, which is also a post-purpose label.
+
 
 
 <!-- ═════════════════════════════════════════════════════════════════════
