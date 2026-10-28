@@ -653,6 +653,18 @@ Criterion 4 was met, so it needs no diagnosis. Criteria 1, 2, 3 and 5 are missed
 
 **What I have not shown.** I have not shown that more training would fix it, since I have not trained longer. I have not shown that my labels are consistent, which is what the next subsection addresses with the agreement report.
 
+**Labelling problem or model problem? What the agreement report can and cannot tell me.**
+
+The course's example diagnosis works by lining up two things: where the confusion matrix puts the misses, and where my own disagreements with staff fall. If both point at the same label pair, the cause is how I labelled. I did the same lining-up, and it gives a limited answer.
+
+- **What it shows.** I matched staff on 30 of 30 posts, including all 7 that staff themselves marked as hard (see the Agreement Report). So when I apply a written rule to posts, I applied it consistently on this set. That is some evidence against "I apply boundaries loosely", but only for the three-label staff taxonomy.
+- **What it cannot show.** My 204 HVAC labels were written by Gemini from my definitions, not applied by me post by post, and no second human has labelled them. So 30 of 30 on the staff set cannot tell me whether the HVAC labels are consistent, and I am not claiming it does.
+- **No pair to line up.** With 0 disagreements there is no label pair on the staff side to match against the matrix. On the model side the misses are not concentrated on a pair either: the true posts of almost every label went to the same two big labels (`industry_venting_operational_burnout`, `career_pathing_compensation_hiring`). Inconsistent labelling would show up as confident confusion between specific neighbouring labels, which is not what the matrix shows.
+- **Other evidence that the labels carry signal.** The zero-shot baseline that used only bare label names, with no training on my data, scored 0.355 accuracy on the same 31 test posts, which is above the 0.258 majority-class guess. A model that had never seen my labels could therefore agree with them well above chance, so the labels are not random noise.
+- **Evidence that the boundaries are genuinely soft.** In Gemini's own notes, which give a top score and a second-highest score for each post, the median gap between the two is 20 percentage points, and 58 of the 204 posts (28%) have a second label within 10 points. Those scores are the labeller's own numbers and are not calibrated, so I treat this only as a sign that many posts could fairly carry two labels. That would cap how high accuracy can go. It would not by itself make a model predict one label for every post.
+
+**My conclusion.** The best-supported cause of the four misses is the model and data (too little data per label and too short a training run), not my labelling. I hold that with moderate confidence, not certainty, because the one check that could separate them for the HVAC data has not been done: hand-labelling a random 30 of my own posts without looking at Gemini's labels and computing kappa against them. I have not done it, so I make no claim about the result.
+
 
 
 
