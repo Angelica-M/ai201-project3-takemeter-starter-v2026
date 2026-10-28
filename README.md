@@ -665,6 +665,20 @@ The course's example diagnosis works by lining up two things: where the confusio
 
 **My conclusion.** The best-supported cause of the four misses is the model and data (too little data per label and too short a training run), not my labelling. I hold that with moderate confidence, not certainty, because the one check that could separate them for the HVAC data has not been done: hand-labelling a random 30 of my own posts without looking at Gemini's labels and computing kappa against them. I have not done it, so I make no claim about the result.
 
+**Did any criterion turn out to be broken, as opposed to missed?**
+
+The rule I followed: a criterion may be revised only if it could not be measured, never because I missed it. Going through the five:
+
+| # | Broken or just missed? | Decision |
+|---|---|---|
+| 1 | Missed. It was measurable and every seed fell far short. | No revision. Lowering 0.65 would be exactly the change that does not count. |
+| 2 | Missed. Measurable, with a bootstrap interval nowhere near 0.60. | No revision. |
+| 3 | Partly broken. The original wording gives no verdict when the label is never predicted, because precision is then 0 of 0. | Revise so that "no predictions" is stated to count as MISSED. The 0.75 target is unchanged and the verdict does not change. |
+| 4 | Broken in unit 5's wording: "two independent annotators on 30 held-out posts" could not be measured. | Already revised earlier (kappa between me and staff on the 30 staff posts, target unchanged at 0.70). |
+| 5 | Partly broken, for the same reason as 3: with no prediction at or above 0.80, precision is undefined. | Revise so that "no predictions at or above 0.80" is stated to count as MISSED. The 0.85 target is unchanged and the verdict does not change. |
+
+The revisions for 3 and 5 do not move any target and do not change any verdict. Their only effect is that the original wording can no longer be read generously, as "nothing it predicted was wrong". The original lines stay in `criteria.md` and each revision goes underneath with its reason, as the course requires.
+
 
 
 
