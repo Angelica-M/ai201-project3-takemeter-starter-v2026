@@ -42,7 +42,7 @@
 
 ## What This Does: Your community, and what your classifier sorts posts into.
 
-TakeMeter targets **r/estimators**, a specialized online Reddit community where construction estimators, preconstruction managers, trade contractors, and software vendors discuss plan takeoffs, bidding strategies, software tools, and industry practices. The posts in this subreddit range from highly technical discussions about sheet metal weight calculations and complex mechanical scope gaps to general career questions, software sales pitches, and bid-day frustration posts. To analyze and categorize (label) these posts effectively, TakeMeter sorts incoming community content into five core taxonomy distinctions:
+TakeMeter targets **r/estimators**, a specialized online Reddit community where construction estimators, preconstruction managers, trade contractors, and software vendors discuss plan takeoffs, bidding strategies, software tools, and industry practices. The posts in this subreddit range from highly technical discussions about sheet metal weight calculations and complex mechanical scope gaps to general career questions, software sales pitches, and bid-day frustration posts. To analyze and categorize (label) these posts effectively, TakeMeter sorts incoming community content into six taxonomy distinctions (five groups of four labels, plus one stand-alone `unrelated` label, 21 labels in all):
 
 * All 6 Taxonomy Distinctions are
 * **Trade Scope & Division Boundaries** (with a total of 4 categories that are: Division 23 (Full Mechanical/HVAC), Sub-Trade Specialty (Sheet Metal vs. Hydronics/Piping), MEP Package (Mechanical/Plumbing/Electrical), and General Construction / Non-Mechanical)
@@ -52,7 +52,7 @@ TakeMeter targets **r/estimators**, a specialized online Reddit community where 
 * **Poster Role & Expertise Level** (with a total of 4 categories that are: Senior B2B Mechanical Estimator / Chief Estimator, General Contractor (GC) Precon Coordinator, Field Tech / Residential Installer / Apprentice, and Software Vendor / Sales Representative)
 * **Unrelated** (a single stand-alone category to catch any input posts that do not meet or closely align with any of the other Taxonomy Distinctions and their categories)
 
-By establishing these distinct boundaries, the LoRA (Low Rank Adaptation) classifier evaluates both the technical scope and user intent behind every post, allowing high-value peer expertise and technical queries to be sorted cleanly from marketing noise, career advice, and entry-level discussions.
+By establishing these distinct boundaries, the classifier (a fully fine-tuned `distilbert-base-uncased`; this project does not use LoRA) is meant to evaluate both the technical scope and user intent behind every post, allowing high-value peer expertise and technical queries to be sorted cleanly from marketing noise, career advice, and entry-level discussions.
 
 ---
 
@@ -401,9 +401,9 @@ These are the three posts where Gemini's top two scores were closest (a 5-point 
 
 **Base model:** `distilbert-base-uncased`, fine-tuned for 21-way text classification (the 21 labels in the Label Taxonomy).
 
-**Settings:** 3 epochs, learning rate 2e-5, batch size 16, 128 tokens per post, seed 42. **Trained on: `cpu`** (device name "CPU", torch 2.14.1+cpu, Windows 11 machine, no GPU). The device is also recorded in `results.json`, because different hardware can give slightly different numbers for the same seed.
+**Settings (the unit 5 run and the before run):** 3 epochs, learning rate 2e-5, batch size 16, 128 tokens per post, seed 42. The Milestone 5 improvement changed only the epochs, to 15 (see The Improvement). **Trained on: `cpu`** (device name "CPU", torch 2.14.1+cpu, Windows 11 machine, no GPU). The device is also recorded in `results.json`, because different hardware can give slightly different numbers for the same seed.
 
-**Anything I changed from the defaults, and why:** The training settings are all the notebook's defaults. The only edits to `takemeter.ipynb` were setup: my name and email, `LABELS` set to my 21 labels, and `CSV` pointed at `data/labels.csv` (where `build_dataset.py` writes my data) instead of `labels.csv` in the repo root. The notebook's code cells were run from a script with the project's `.venv` Python rather than inside the VS Code notebook window.
+**Anything I changed from the defaults, and why:** For the unit 5 run the training settings are all the notebook's defaults (the one later change, EPOCHS 3 to 15, is in The Improvement). The only edits to `takemeter.ipynb` were setup: my name and email, `LABELS` set to my 21 labels, and `CSV` pointed at `data/labels.csv` (where `build_dataset.py` writes my data) instead of `labels.csv` in the repo root. The notebook's code cells were run from a script with the project's `.venv` Python rather than inside the VS Code notebook window.
 
 **Split sizes:** 204 posts split 142 train / 31 validation / 31 test. The notebook could not stratify the split, because several labels have only one post, so it fell back to a plain random split (that is a warning about the dataset, not the split). Test split per label:
 
@@ -515,9 +515,15 @@ So my definitions did not help the baseline, they cost it 0.226 of accuracy (11 
 
 I predict the fine-tuned LoRA model will achieve an overall test accuracy between 0.35 and 0.45—comfortably outperforming the baseline score of 0.129 and the majority-class guess of 0.258, yet capped by severe data skew. While high-frequency categories like `industry_venting_operational_burnout` (36 train) and `career_pathing_compensation_hiring` (34 train) will be learned robustly by the adapter, the model will completely fail on the three zero-train labels (`public_works_prevailing_wage_bidding`, `software_vendor_sales_representative`, and `commercial_institutional_industrial`) that hold 4 test instances. Additionally, the model's 128-token truncation limit will cut off longer posts (where the 90th percentile spans ~1,880 characters), exacerbating classification errors on fuzzy category boundaries like operational venting versus bid strategy scope gaps where semantic score gaps are already narrow.
 
+*Note on the prediction above: it says "LoRA model" and "adapter". That wording was wrong, because the notebook fully fine-tunes DistilBERT and uses no LoRA. I have left the prediction text as I wrote it, since a prediction should not be edited after the fact.*
+
 **What the gap actually means:**
 <!-- If the baseline matched your trained model, your fine-tuning added
      nothing — and that is a real finding, not a failure. Say it plainly. -->
+
+At 3 epochs, my fine-tuning added almost nothing. Against the baseline that used my 21 definitions the trained model was better on accuracy (0.258 against 0.129) but identical on macro F1 (0.061 against 0.060), and both scored zero on nearly every label, so neither learned the rare ones. Against the bare-label-names baseline (0.355 accuracy, 0.215 macro F1) the trained model was worse on both, so a free zero-shot model with no training on my data beat it. That means at 3 epochs the fine-tuning had not yet earned its cost.
+
+After the 15-epoch improvement, the trained model's accuracy on the same seed-42 split is 0.419 (13 of 31), against the bare-names baseline's 0.355 (11 of 31). That is a 2-post difference on 31 posts, too small to call, so the honest reading is that the fine-tuned model has caught up with the best zero-shot baseline and has not clearly passed it. The baseline was run once, on the seed-42 split only, so I cannot make this comparison for seeds 7 and 2024.
 
 
 
@@ -648,7 +654,7 @@ Criterion 4 was met, so it needs no diagnosis. Criteria 1, 2, 3 and 5 are missed
 - **It is a constant guesser, not a model that learned wrong boundaries.** Seed 42 predicted only two labels (`industry_venting_operational_burnout` 25 times, `career_pathing_compensation_hiring` 6), seed 7 predicted career 28 times and venting 3, and seed 2024 predicted career for all 31 test posts. Accuracy moved only with which big label a seed favoured, which is why the three accuracies (0.258, 0.226, 0.290) track how many career or venting posts each split held.
 - **Its probabilities are nearly flat.** The average winning probability was about 0.09 to 0.12 whether it was right or wrong, against 0.048 for a uniform guess over 21 labels. A model that had learned a wrong boundary would be confident and wrong. This one has not committed to anything.
 - **The data are very lopsided.** Of the 21 labels, 5 have no posts at all and 7 more have 3 or fewer (5 labels with 1 post, `public_works_prevailing_wage_bidding` with 2, `unrelated` with 3), so 12 of 21 labels cannot be learned or tested. The two biggest labels hold 104 of 204 posts (venting 55, career 49).
-- **The training run is very short.** About 173 posts in training at batch size 16 is 11 steps per epoch, so 3 epochs is about 33 optimizer steps at a learning rate of 2e-5. That count comes from the settings, not from a log. It is not many updates for a model whose 21-way classification head started random.
+- **The training run is very short.** About 142 posts in training (204 minus 31 validation and 31 test) at batch size 16 is 9 steps per epoch, so 3 epochs is about 27 optimizer steps at a learning rate of 2e-5. That count comes from the settings, not from a log. It is not many updates for a model whose 21-way classification head started random.
 - **Too few examples is not the whole story.** The five core labels in Criterion 2 have 10 to 23 posts each, and `general_construction_non_mechanical` has 23 (the third largest label), yet none was ever predicted. If data volume alone explained it, a label with 23 posts should show some signal. That points at the short training run too, but I have not tested it. It is a hypothesis for Milestone 5, not a finding.
 
 **Criterion 1 (accuracy 0.258 / 0.226 / 0.290, target 0.65).** Cause: the root cause above. Evidence: the accuracy equals what always guessing the biggest label scores (0.258, the majority-class figure from the baseline section), so the model learned no more than label frequency. Seed 7's 0.226 is below even that.
@@ -757,9 +763,9 @@ There is no disagreement pattern, because there were no disagreements. What I ca
 
 ## The Improvement
 
-**What I changed:** one training setting: `EPOCHS` from 3 to 15 in the notebook. Nothing else changes: the same 204 posts and labels, the same split code, the same three seeds (42, 7, 2024), learning rate 2e-5, batch size 16, 128 tokens, and the same model (`distilbert-base-uncased`, full fine-tune). At about 173 training posts and batch size 16, that moves training from about 33 optimizer steps to about 165.
+**What I changed:** one training setting: `EPOCHS` from 3 to 15 in the notebook. Nothing else changes: the same 204 posts and labels, the same split code, the same three seeds (42, 7, 2024), learning rate 2e-5, batch size 16, 128 tokens, and the same model (`distilbert-base-uncased`, full fine-tune). At 142 training posts and batch size 16 (9 steps per epoch), that moves training from about 27 optimizer steps to about 135.
 
-**Which diagnosis pointed at it:** the root cause in Verdicts and Diagnoses: a model that is a near-constant guesser with nearly flat probabilities (average winning probability 0.09 to 0.12 against 0.048 for a uniform guess), which looks like a model that has barely started learning, and a short run of about 33 optimizer steps. The strongest single clue was that `general_construction_non_mechanical` has 23 posts, the third most of any label, and was never predicted on any seed, so data volume alone does not explain the misses.
+**Which diagnosis pointed at it:** the root cause in Verdicts and Diagnoses: a model that is a near-constant guesser with nearly flat probabilities (average winning probability 0.09 to 0.12 against 0.048 for a uniform guess), which looks like a model that has barely started learning, and a short run of about 27 optimizer steps. The strongest single clue was that `general_construction_non_mechanical` has 23 posts, the third most of any label, and was never predicted on any seed, so data volume alone does not explain the misses.
 
 **Why this change and not the other two the course lists:**
 
@@ -858,7 +864,7 @@ There is no disagreement pattern, because there were no disagreements. What I ca
 
 **What the numbers say:**
 
-- **Accuracy rose on all three seeds, by 0.16 to 0.26.** Before, the model was at or below the majority-class guess; now it is above it on every seed. That is the first evidence in this project that it learned something from post content, and it supports the Milestone 4 diagnosis that the short run (about 33 optimizer steps) was part of the cause.
+- **Accuracy rose on all three seeds, by 0.16 to 0.26.** Before, the model was at or below the majority-class guess; now it is above it on every seed. That is the first evidence in this project that it learned something from post content, and it supports the Milestone 4 diagnosis that the short run (about 27 optimizer steps) was part of the cause.
 - **It is not yet close to the target.** The best seed, 0.548, is still 0.10 below 0.65, and the other two are 0.23 below it.
 - **The five core labels moved off zero, but not reliably.** Macro F1 went from 0.000 to 0.080, 0.213 and 0.222. The 95% bootstrap intervals for seeds 42 and 7 still start at 0.000, so for those two seeds I cannot say the core-label improvement is more than luck in which posts landed in the test split. Only seed 2024's interval (0.057 to 0.444) stays above zero, and every interval is far below 0.60.
 - **`general_construction_non_mechanical` is now predicted, but on very few posts.** It was predicted 1, 2 and 4 times, giving precision 1.000, 1.000 and 0.500. The two 1.000 values rest on 1 and 2 predictions, so I do not read them as a pass. Seed 2024 misses the 0.75 target.
