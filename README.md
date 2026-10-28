@@ -749,9 +749,17 @@ There is no disagreement pattern, because there were no disagreements. What I ca
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** one training setting: `EPOCHS` from 3 to 15 in the notebook. Nothing else changes: the same 204 posts and labels, the same split code, the same three seeds (42, 7, 2024), learning rate 2e-5, batch size 16, 128 tokens, and the same model (`distilbert-base-uncased`, full fine-tune). At about 173 training posts and batch size 16, that moves training from about 33 optimizer steps to about 165.
 
-**Which diagnosis pointed at it:**
+**Which diagnosis pointed at it:** the root cause in Verdicts and Diagnoses: a model that is a near-constant guesser with nearly flat probabilities (average winning probability 0.09 to 0.12 against 0.048 for a uniform guess), which looks like a model that has barely started learning, and a short run of about 33 optimizer steps. The strongest single clue was that `general_construction_non_mechanical` has 23 posts, the third most of any label, and was never predicted on any seed, so data volume alone does not explain the misses.
+
+**Why this change and not the other two the course lists:**
+
+- *Relabel one boundary:* not applicable. My agreement check found no disagreements, so there is no boundary I applied two ways, and I will not invent one.
+- *Add 30 posts to the thinnest label:* my diagnosis says 12 of 21 labels are too thin, and no single label's 30 posts would fix that. It also would not explain why a 23-post label was never predicted. That is a data change for a later round.
+- *Change one training setting:* the course says to pick this only if the diagnosis actually pointed at training. Mine did, but only as a hypothesis, which I said I had not tested. This run tests it.
+
+**My prediction, written before the run:** the model will stop being a pure constant guesser on at least two of the three seeds and will predict more than two labels. Overall accuracy will rise from 0.226 to 0.290 to somewhere around 0.30 to 0.45, but it will stay under 0.65, so Criterion 1 stays MISSED. Macro F1 over the five core labels will move off 0.000 on at least one seed but stay well under 0.60, so Criterion 2 stays MISSED. I expect some predictions to reach 0.80 confidence, which would let Criterion 5 be measured for the first time. If accuracy does not move and the model still collapses onto one or two labels, the short run was not the main cause. I would then say that and point at the data (labels with 3 or fewer posts) instead.
 
 ### Run Log — After
 
