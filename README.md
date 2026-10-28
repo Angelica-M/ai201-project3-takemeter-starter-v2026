@@ -527,7 +527,7 @@ I predict the fine-tuned LoRA model will achieve an overall test accuracy betwee
 | 1. Overall accuracy | at least 0.65 on every seed | 0.258 | 0.226 | 0.290 |  |
 | 2. Macro F1 over the 5 core technical labels | at least 0.60 on every seed, standard deviation under 0.05 | 0.000 | 0.000 | 0.000 |  |
 | 3. Precision of `general_construction_non_mechanical` | at least 0.75 on every seed | 0.000 (never predicted; 4 test posts) | 0.000 (never predicted; 4 test posts) | 0.000 (never predicted; 5 test posts) |  |
-| 4. Cohen's kappa against staff labels (30 posts) | at least 0.70 | not run yet (needs the agreement check) | n/a | n/a |  |
+| 4. Cohen's kappa against staff labels (30 posts) | at least 0.70 | 1.000 (30 of 30 agreed with staff; not a model measure, so the same for all seeds) | n/a | n/a |  |
 | 5. Precision when confidence is at least 0.80 | at least 0.85 on every seed | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) | no prediction reached 0.80 (n = 0) |  |
 
 **The spread across seeds.** Accuracy was 0.258, 0.226 and 0.290, a spread of 0.065 (6.5 points), which is under the notebook's "more than about ten points" warning line, so by that rule alone the measure is not flagged as unstable. It still hides a bigger problem. The model was close to a constant guesser on every seed:
@@ -642,7 +642,9 @@ In seed 42, 5 real `career_pathing_compensation_hiring` posts were called `indus
      data/staff_taxonomy.md, not your own — so every argument below is made
      from those definitions and those decision rules. -->
 
-**Agreement rate:** ___ / 30 = ___%
+**Agreement rate:** 30 / 30 = 100% (Cohen's kappa 1.000, where 0.333 agreement was expected by chance; `agreement_results.json`, commit 7657aab).
+
+How it was produced: I labelled the 30 posts in `data/staff_posts.csv` under `data/staff_taxonomy.md` and committed `my_staff_labels.csv` (d3a3178) before the staff key was in the repo. Then I ran `python agreement.py` and `python kappa.py`. One disclosure: my first attempt at the key was a copy of my own file, which scored a meaningless 100%. I discarded that result without committing it and re-ran with the real `data/staff_labels.csv` (8932fa1).
 
 <!-- Nobody grades this number. A 60% who argues every disagreement from the
      stated rules beats a 95% who wrote "staff was right" nine times. Several
@@ -664,25 +666,32 @@ In seed 42, 5 real `career_pathing_compensation_hiring` posts were called `indus
      written rule two different ways on 30 posts, that is direct evidence about
      what you did across your own 200. -->
 
-**1.**
-> *The post:*
->
-> *Staff said / I said:*
->
-> *My call, and why:*
->
-> *Which pile:*
+There were **none**: `agreement.py` listed 0 disagreements, so there is nothing to adjudicate and nothing to sort. I am not inventing any.
 
-**2.**
-> *The post:*
->
-> *Staff said / I said:*
->
-> *My call, and why:*
->
-> *Which pile:*
+| Pile | Count |
+|---|---|
+| (a) The rule covered it and I applied it loosely | 0 |
+| (b) The rule genuinely doesn't say | 0 |
+| (c) The rule is ambiguous here and my reading is defensible | 0 |
+
+**The closest thing to evidence: the staff's own "borderline" posts.** Staff marked 7 of the 30 posts as hard (`borderline = yes` in `data/staff_labels.csv`), and I matched staff on all 7. Each is a place where a disagreement was most likely, and each turns on one of the written rules:
+
+| Post | Label (both of us) | What makes it hard (staff's note) | Rule |
+|---|---|---|---|
+| sp_005 | `analysis` | Opens like a shoe hot take, but the second sentence carries the argument with two comparable numbers | 1 |
+| sp_010 | `analysis` | Hedged conclusion on a tiny sample, but the checkable observation is what the claim rests on | 1 |
+| sp_014 | `hot_take` | The 3% decorates a conclusion already reached ("so obviously" does the work) | 1 |
+| sp_019 | `hot_take` | Reads reflective, almost a reaction, but it is a general claim about everyone | 2 |
+| sp_020 | `hot_take` | Sounds observational, but no count is given: asserting, not showing | 1 |
+| sp_028 | `reaction` | "Third this year" is countable but nothing is argued from it, so no fact is load-bearing | 1, 3 |
+| sp_029 | `reaction` | A wry shoe observation, but it reports the writer's own realisation in the moment | 2 |
 
 **What the pattern in my disagreements tells me:**
+
+There is no disagreement pattern, because there were no disagreements. What I can say is limited to this set. Matching on all 7 posts the staff themselves called hard suggests I applied rule 1 (the fact must carry the argument, not decorate it) and rule 2 (about the writer versus a general claim) the same way staff did, and I found no gap in the definitions that forced a guess. That fits a rule that is tight on this set, not a set that was easy. I would not push it further:
+
+- **Thirty posts is small.** A perfect score on 30 can't rule out an agreement rate of 85% to 90% on a larger set, and the kappa interval of [1.000, 1.000] only reflects that there was nothing to resample.
+- **It does not transfer to my 21 HVAC labels.** This checked how I apply the staff taxonomy of three labels. My 204 training labels were written by Gemini, and no second human has labelled them. So the agreement report cannot yet tell a labelling problem from a model problem for the HVAC data, which is what Milestone 4 needs it to do. I will say that in the diagnoses rather than lean on this result.
 
 
 
